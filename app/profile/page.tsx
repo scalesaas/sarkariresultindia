@@ -9,8 +9,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Edit, Github, Instagram, Linkedin, User, Mail, Upload, Camera, X } from "lucide-react";
-import { onUploadImageAction } from '../dashboard/blog/components/feats/file/actions/image-upload.action';
-
 // Define interface for instructor data
 interface InstructorData {
   Name: string;
@@ -90,15 +88,15 @@ export default function Page() {
       const formData = new FormData();
       formData.append('image', file);
 
-      const result = await onUploadImageAction(formData);
+      // const result = await onUploadImageAction(formData);
 
-      if (result.success) {
-        const imageUrl = result.data?.path;
-        setFormData(prev => ({ ...prev, profile: imageUrl }));
-        setImagePreview(imageUrl ?? null);
-      } else {
-        throw new Error(result.message || 'Failed to upload image');
-      }
+      // if (result.success) {
+      //   const imageUrl = result.data?.path;
+      //   setFormData(prev => ({ ...prev, profile: imageUrl }));
+      //   setImagePreview(imageUrl ?? null);
+      // } else {
+      //   throw new Error(result.message || 'Failed to upload image');
+      // }
     } catch (error: any) {
       console.error('Error uploading image:', error);
       setError('Failed to upload image. Please try again.');

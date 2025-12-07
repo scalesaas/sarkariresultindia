@@ -15,8 +15,6 @@ function extractImageUrlsFromMarkdown(markdown: string): string[] {
     const markdownImageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
     const htmlImageRegex = /<img[^>]+src="([^">]+)"/g;
     let match: RegExpExecArray | null;
-    while ((match = markdownImageRegex.exec(markdown))) imageUrls.push(match[2]);
-    while ((match = htmlImageRegex.exec(markdown))) imageUrls.push(match[1]);
     return imageUrls;
 }
 
@@ -151,10 +149,13 @@ export default function Home() {
                                             const images = extractImageUrlsFromMarkdown(featuredBlog.content);
                                             const img = images.length > 0 ? images[0] : placeholderImages[0];
                                             return (
-                                                <Image 
-                                                    src={img} alt={featuredBlog.title || "Featured"} fill 
-                                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                                />
+                                                <div>
+                                                    test
+                                                </div>
+                                                // <Image 
+                                                //     src={img} alt={featuredBlog.title || "Featured"} fill 
+                                                //     className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                                // />
                                             );
                                         })()}
                                     </div>
@@ -191,13 +192,14 @@ export default function Home() {
                                         <Link key={blog.slug || index} href={`/blog/${blog.slug}`} className="group h-full">
                                             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 h-full flex flex-col">
                                                 <div className="relative h-48 w-full overflow-hidden">
-                                                    <Image
+                                                    {/* <Image
                                                         src={displayImage}
                                                         alt={blog.title ? String(blog.title) : "Blog post image"}
                                                         fill
                                                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                                                         sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                                    />
+                                                    /> */}
+                                                    
                                                 </div>
                                                 <div className="p-4 flex flex-col flex-grow">
                                                     <div className="text-xs text-blue-600 font-semibold mb-2 uppercase tracking-wide">

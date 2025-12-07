@@ -2,7 +2,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { IBlog, Icourse, IModule } from "@/lib/types";
 import { revalidatePath, unstable_noStore } from "next/cache";
-import { BlogFormSchema, BlogFormSchemaType, Chapterformschematype , CourseFormSchematype } from "../../app/dashboard/blog/schema";
 const DASHBOARD = "/dashboard/blog";
 
 export async function createBlog(data: {
@@ -21,7 +20,7 @@ export async function createBlog(data: {
 
 	const supabase = await createSupabaseServerClient();
 	const blogResult = await supabase
-		.from("blog")
+		.from("govtblog")
 		.insert(data)
 		.single();
 
@@ -179,7 +178,7 @@ export async function readmodulescourse(id: string) {
 export async function readBlog() {
 	const supabase = await createSupabaseServerClient();
 	return supabase
-		.from("blog")
+		.from("govtblog")
 		.select("*")
 		.eq("status", true)
 		.range(0, 7)
@@ -199,7 +198,7 @@ export async function readchapter() {
 export async function readmoreblog() {
 	const supabase = await createSupabaseServerClient();
 	return supabase
-		.from("blog")
+		.from("govtblog")
 		.select("*")
 		.eq("status", true)
 		.range(0, 35)
@@ -225,7 +224,7 @@ export async function readBlogAdmin() {
 
 
 	return supabase
-		.from("blog")
+		.from("govtblog")
 		.select("*")
 		.eq('author', id || " " )
 		.order("created_at", { ascending: true });
@@ -247,17 +246,17 @@ export async function Coursebyadmin() {
 
 export async function readBlogById(blogId: number) {
 	const supabase = await createSupabaseServerClient();
-	return supabase.from("blog").select("*").eq("id", blogId).single();
+	return supabase.from("govtblog").select("*").eq("id", blogId).single();
 }
 export async function readBlogIds() {
 	const supabase = await createSupabaseServerClient();
-	return supabase.from("blog").select("id");
+	return supabase.from("govtblog").select("id");
 }
 
 export async function readBlogDeatailById(id : string) {
 	const supabase = await createSupabaseServerClient();
 	return await supabase
-		.from("blog")
+		.from("govtblog")
 		.select("*")
 		.eq("slug", id)
 		.single();
@@ -308,74 +307,16 @@ export async function getallimages() {
 
 export async function updateBlogById(blogId: string, data: IBlog) {
 	const supabase = await createSupabaseServerClient();
-	const result = await supabase.from("blog").update(data).eq("id", blogId);
+	const result = await supabase.from("govtblog").update(data).eq("id", blogId);
 	revalidatePath(DASHBOARD);
 	revalidatePath("/blog/" + blogId);
 	return JSON.stringify(result);
 }
 
-export async function updateBlogDetail(
-	id: string,
-	data: BlogFormSchemaType
-) {
-	const supabase = await createSupabaseServerClient();
-	const resultBlog = await supabase
-		.from("blog")
-		.update(data)
-		.eq("id", id);
-	if (resultBlog) {
-		return (resultBlog);
-	} else {
-		revalidatePath(DASHBOARD);
-	}
-}
-
-
-
-
-export async function updatechapter(
-	id: number,
-	data: Chapterformschematype
-) {
-	const supabase = await createSupabaseServerClient();
-	const resultchapter = await supabase
-		.from("chapters")
-		.update(data)
-		.eq("id", id);
-		console.log(data);
-
-	
-	if (resultchapter) {
-		console.log(resultchapter);
-		return (resultchapter);
-	} else {
-		revalidatePath(DASHBOARD);
-	}
-}
-
-export async function updateCoursebyid(
-	id: string,
-	data: CourseFormSchematype
-) {
-	const supabase = await createSupabaseServerClient();
-	const resultcourse = await supabase
-		.from("course")
-		.update(data)
-		.eq("id", id);
-	console.log(data);
-
-	if (resultcourse) {
-		console.log(resultcourse);
-		return (resultcourse);
-	} else {
-		revalidatePath(DASHBOARD);
-	}
-}
-
 export async function deleteBlogById(blogId: string) {
 	console.log("deleting blog post")
 	const supabase = await createSupabaseServerClient();
-	const result = await supabase.from("blog").delete().eq("id", blogId);
+	const result = await supabase.from("govtblog").delete().eq("id", blogId);
 	console.log(result);
 	revalidatePath(DASHBOARD);
 	revalidatePath("/blog/" + blogId);	

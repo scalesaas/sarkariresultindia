@@ -9,7 +9,7 @@ import Footer from "@/components/Footer";
 
 export async function generateStaticParams() {
   const { data: blogs, error } = await supabase
-    .from("blog")
+    .from("govtblog")
     .select("slug");
   if (error) {
     throw error;
@@ -59,7 +59,7 @@ const placeholderImages = [
 
 export async function generateMetadata({ params }: { params: { id: string } }) {
     const { data, error } = await supabase
-                .from("blog")
+                .from("govtblog")
                 .select("*")
                 .eq("slug", params.id)
                 .single();
@@ -84,7 +84,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
     export default async function Page({ params }: { params: { id: string } }) {
     
       const { data: blog, error } = await supabase
-        .from("blog")
+        .from("govtblog")
         .select("*")
         .eq("slug", params.id)
         .single();
