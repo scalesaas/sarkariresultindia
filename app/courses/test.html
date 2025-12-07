@@ -1,0 +1,119 @@
+<h1><br /></h1>
+<p><br /></p>
+<h1>
+  <strong class="ql-size-large"
+    >Using MediaPipe on Raspberry Pi with Built-in Camera: Fixing CV2 Video
+    Capture Issue</strong
+  >
+</h1>
+<p><br /></p>
+<p><br /></p>
+<h1><span class="ql-size-huge">Introduction:</span></h1>
+<p><br /></p>
+<p>
+  Raspberry Pi is a versatile single-board computer popular among hobbyists,
+  educators, and professionals alike. Its compact size and affordability make it
+  an excellent platform for various projects, including computer vision
+  applications. However, when working with the built-in camera module on
+  Raspberry Pi and trying to utilize OpenCV's cv2.VideoCapture for video
+  capture, users often encounter issues. In this blog post, we'll explore how to
+  overcome this challenge by leveraging MediaPipe, a robust library for building
+  machine learning pipelines.
+</p>
+<p>
+  <img
+    src="https://camo.githubusercontent.com/23d5690de6849231a823df952b28277f8f9a79005f2f1415d0c9bac24b29dcfd/68747470733a2f2f646576656c6f706572732e676f6f676c652e636f6d2f7374617469632f6d65646961706970652f696d616765732f686f6d652f6865726f5f30315f313932302e706e67"
+  />
+</p>
+<p><br /></p>
+<h1><span class="ql-size-huge">Problem Statement:</span></h1>
+<p><br /></p>
+<p>
+  The built-in camera module on Raspberry Pi offers a convenient way to capture
+  images and videos. However, using cv2.VideoCapture to access the camera feed
+  directly can be problematic, especially with certain configurations or
+  versions of OpenCV. Users may encounter errors or find that the camera feed
+  does not display as expected.
+</p>
+<p><br /></p>
+<h1><span class="ql-size-huge">Solution Overview:</span></h1>
+<p><br /></p>
+<p>
+  To overcome the limitations of cv2.VideoCapture on Raspberry Pi's built-in
+  camera, we can integrate MediaPipe into our computer vision pipeline.
+  MediaPipe is an open-source framework developed by Google Research for
+  building cross-platform AI pipelines. It provides ready-to-use solutions for
+  various tasks, including face detection, pose estimation, hand tracking, and
+  more.
+</p>
+<p><br /></p>
+<h1><span class="ql-size-huge">Implementation:</span></h1>
+<p><br /></p>
+<p><br /></p>
+<p>
+  We'll demonstrate how to use MediaPipe for face detection with the built-in
+  camera module on Raspberry Pi. Below is a Python code snippet illustrating the
+  implementation:
+</p>
+<p><br /></p>
+<p><br /></p>
+<h1>code</h1>
+<p><br /></p>
+<pre
+  class="ql-syntax"
+  spellcheck="false"
+><span class="hljs-keyword">import</span> cv2
+<span class="hljs-keyword">import</span> cvzone
+<span class="hljs-keyword">from</span> cvzone.FaceDetectionModule <span class="hljs-keyword">import</span> FaceDetector
+<span class="hljs-keyword">from</span> picamera2 <span class="hljs-keyword">import</span> Picamera2
+
+
+picam2 = Picamera2()
+picam2.preview_configuration.main.size = (<span class="hljs-number">640</span>,<span class="hljs-number">480</span>)
+picam2.preview_configuration.main.format = <span class="hljs-string">"RGB888"</span>
+picam2.preview_configuration.align()
+picam2.configure(<span class="hljs-string">"preview"</span>)
+picam2.start()
+detector = FaceDetector(minDetectionCon=<span class="hljs-number">0.5</span>)
+list=[]
+while <span class="hljs-literal">True</span>:
+    im= picam2.capture_array()
+    im, bboxs= detector.findFaces(im,draw=<span class="hljs-literal">True</span>)
+    <span class="hljs-keyword">if</span> bboxs:
+        bbox = bboxs[<span class="hljs-number">0</span>][<span class="hljs-string">"bbox"</span>]
+        # bboxInfo - <span class="hljs-string">"id"</span>,<span class="hljs-string">"bbox"</span>,<span class="hljs-string">"score"</span>,<span class="hljs-string">"center"</span>center = bboxs[<span class="hljs-number">0</span>][<span class="hljs-string">"center"</span>]cv2.circle(im, center, <span class="hljs-number">5</span>, (<span class="hljs-number">255</span>, <span class="hljs-number">0</span>, <span class="hljs-number">255</span>), cv2.FILLED)
+        x, y, w, h = bbox
+        cv2.rectangle(im, (x, y), (x+w, y+h), (<span class="hljs-number">0</span>, <span class="hljs-number">255</span>, <span class="hljs-number">0</span>), <span class="hljs-number">2</span>)  # Draw a rectangle around the face
+        center = bboxs[<span class="hljs-number">0</span>][<span class="hljs-string">"center"</span>] 
+        # print(x,y,w,h)
+    
+       
+    cv2.imshow(<span class="hljs-string">"image"</span>,im)
+    key = cv2.waitKey(<span class="hljs-number">1</span>)
+    <span class="hljs-keyword">if</span> key == <span class="hljs-number">27</span>:  # esc
+         break
+cv2.destroyAllWindows() 
+</pre>
+<h1><br /></h1>
+<h1><span class="ql-size-huge">video implementation:-</span></h1>
+<p><br /></p>
+<h1>
+  <a
+    href="https://youtube.com/shorts/CiIQEQLD9Dk?si=e6RuzuvAEiAAldMw"
+    rel="noopener noreferrer"
+    target="_blank"
+    ><strong>youtube video</strong></a
+  >
+</h1>
+<p><br /></p>
+<h1><span class="ql-size-huge">Conclusion:</span></h1>
+<p><br /></p>
+<p>
+  By leveraging MediaPipe for face detection on Raspberry Pi's built-in camera,
+  we can overcome the limitations of cv2.VideoCapture and ensure smooth
+  operation of computer vision applications. MediaPipe offers robust and
+  efficient solutions for various tasks, making it an excellent choice for
+  Raspberry Pi projects requiring real-time processing of visual data.
+  Experiment with different MediaPipe pipelines to explore additional
+  capabilities and enhance your Raspberry Pi projects further.
+</p>

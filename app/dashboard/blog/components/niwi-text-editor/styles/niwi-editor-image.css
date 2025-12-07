@@ -1,0 +1,133 @@
+/*=============================================
+=                  Variables                  =
+=============================================*/
+:root {
+  --niwi-image-editor-tooltip-background: #282a2e;
+  --niwi-image-editor-tooltip-icon: #fff;
+  --niwi-image-editor-tooltip-active-icon: #60a5fa;
+}
+
+/*=============================================
+=              Editor Niwi Image              =
+=============================================*/
+
+.niwi-editor-image-container {
+  width: 100%;
+}
+
+.niwi-editor-image-container .image-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+.niwi-editor-image-container .image-wrapper.fitWidth {
+  width: 100%;
+}
+
+.niwi-editor-image-container .image-wrapper.extraWidth {
+  width: 130%;
+  margin-left: -15%;
+}
+
+.niwi-editor-image-container .niwi-image {
+  width: 100%;
+  transition: border 0.1s ease-in-out;
+  border-radius: 16px;
+}
+
+.niwi-editor-image-container .niwi-image.active {
+  border: 7px solid var(--niwi-image-editor-tooltip-active-icon);
+  transition: border 0.3s ease-in-out;
+}
+
+.niwi-editor-image-container .niwi-image-tooltip {
+  background-color: var(--niwi-image-editor-tooltip-background);
+  border-radius: 10px;
+
+  /* Position */
+  position: absolute;
+  top: -55px;
+  left: 50%;
+  margin-left: -52px;
+
+  /* Flex */
+  flex-direction: row;
+  align-items: center;
+  /* column-gap: 8px; */
+
+  /* Animation */
+  animation-name: img-editor-tooltip-fade-in;
+  animation-duration: 0.2s;
+  animation-delay: 0s;
+  animation-fill-mode: forwards;
+
+  /* Inactive */
+  display: none;
+  visibility: hidden;
+}
+
+.niwi-editor-image-container .niwi-image-tooltip.active {
+  /* Active */
+  display: flex;
+  visibility: visible;
+}
+
+.niwi-editor-image-container .niwi-image-tooltip::before {
+  content: "";
+  width: 15px;
+  height: 15px;
+  background-color: var(--niwi-image-editor-tooltip-background);
+
+  /* Position */
+  position: absolute;
+  bottom: -10px;
+  left: 49%;
+  transform: translateX(-50%);
+  rotate: 45deg;
+}
+
+@keyframes img-editor-tooltip-fade-in {
+  0% {
+    opacity: 0;
+    scale: 0.5;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+.niwi-editor-image-container .niwi-image-tooltip .icon-wrapper {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  position: relative;
+}
+
+.niwi-editor-image-container .niwi-image-tooltip .icon-wrapper.trash {
+  color: var(--niwi-dark-text-color);
+}
+
+.niwi-editor-image-container .niwi-image-tooltip .icon {
+  fill: var(--niwi-image-editor-tooltip-icon);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.niwi-editor-image-container .niwi-image-tooltip .icon.active {
+  fill: var(--niwi-image-editor-tooltip-active-icon);
+}
+
+.niwi-editor-image-caption {
+  font-size: 14px;
+  width: 100%;
+  display: block;
+  background: transparent;
+  text-align: center;
+  padding: 10px 20px;
+  outline: none;
+  min-height: 40px;
+}

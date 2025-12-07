@@ -1,0 +1,816 @@
+/*=============================================
+=                  Variables                  =
+=============================================*/
+
+:root {
+  --niwi-blog-publish-img-color: #eee;
+  --niwi-dark-blog-publish-img-color: #313339;
+
+  /* Blog Profile */
+  --niwi-blog-profile-bg-color: #fff;
+  --niwi-dark-blog-profile-bg-color: #313339;
+
+  /* Blog Comment */
+}
+
+/*=============================================
+=                Preview Modal                =
+=============================================*/
+
+.niwi-blog-publish-preview-modal {
+  background-color: var(--niwi-background, #f4f4f5);
+
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100;
+  padding-top: 60px;
+  padding-bottom: 60px;
+  overflow-y: auto;
+}
+
+@media screen and (min-width: 768px) {
+  .niwi-blog-publish-preview-modal {
+    padding-top: 100px;
+    padding-bottom: 100px;
+  }
+}
+
+.niwi-blog-publish-preview-modal.inactive {
+  display: none;
+  /* Animation */
+  animation-name: niwi-blog-publish-preview-modal-content-close-animation;
+  animation-duration: 0.2s;
+  animation-delay: 0s;
+  animation-fill-mode: forwards;
+}
+
+@keyframes niwi-blog-publish-preview-modal-content-close-animation {
+  0% {
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    display: none;
+  }
+}
+
+.dark .niwi-blog-publish-preview-modal {
+  background-color: var(--niwi-dark-background, #2b2d31);
+}
+
+.niwi-blog-publish-preview-modal.active {
+  /* Active */
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+
+.niwi-blog-publish-preview-modal.active .content {
+  /* Animation */
+  animation-name: niwi-blog-publish-preview-modal-content-animation;
+  animation-duration: 0.2s;
+  animation-delay: 0s;
+  animation-fill-mode: forwards;
+}
+
+@keyframes niwi-blog-publish-preview-modal-content-animation {
+  0% {
+    opacity: 0;
+    scale: 0.9;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+.niwi-blog-publish-preview-modal .content {
+  max-width: 1060px;
+  padding-left: 20px;
+  padding-right: 20px;
+  margin: 0 auto;
+  overflow-y: auto;
+}
+
+.niwi-blog-publish-preview-modal .content .section-wrapper {
+  display: flex;
+  flex-direction: column;
+  column-gap: 20px;
+  row-gap: 14px;
+}
+
+@media screen and (min-width: 768px) {
+  .niwi-blog-publish-preview-modal .content .section-wrapper {
+    display: flex;
+    flex-direction: row;
+    column-gap: 30px;
+  }
+}
+
+.niwi-blog-publish-preview-modal .content .section-wrapper .section {
+  flex: 1;
+  width: 100%;
+}
+
+.niwi-blog-publish-preview-modal .close-icon {
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  align-items: center;
+}
+.niwi-blog-publish-preview-modal .close-icon svg {
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+/*=============================================
+=             Preview Blog Styling            =
+=============================================*/
+
+.niwi-blog-publish-preview-modal .blog-image {
+  min-height: 200px;
+}
+
+.niwi-blog-publish-preview-modal .niwi-blog-image-container {
+  background-color: var(--niwi-blog-publish-img-color);
+
+  height: 200px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+
+  /* Display */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dark .niwi-blog-publish-preview-modal .niwi-blog-image-container {
+  background-color: var(--niwi-dark-blog-publish-img-color);
+}
+
+.niwi-blog-image-empty-text {
+  max-width: 300px;
+  margin: 0 auto;
+  text-align: center;
+  opacity: 0.4;
+}
+
+.niwi-blog-image {
+  border-radius: 20px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-positoin: center center;
+}
+
+.niwi-blog-preview-button {
+  color: white;
+  padding: 5px 18px;
+  border: 1px solid white;
+  border-radius: 30px;
+  background-color: #000000b0;
+  position: relative;
+  opacity: 0.6;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.niwi-blog-preview-button:hover {
+  opacity: 1;
+}
+
+.niwi-blog-preview-photo-changer-container {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.niwi-blog-preview-photo-changer-container .item {
+  width: 33%;
+  height: 33%;
+  padding-top: 33%;
+  position: relative;
+  cursor: pointer;
+}
+
+.niwi-blog-preview-photo-changer-container .item:hover {
+  opacity: 0.7;
+}
+
+.niwi-blog-preview-photo-changer-container .item .item-img {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  width: 90%;
+  height: 90%;
+  transform: translate(-50%);
+}
+
+/*=============================================
+=              Niwi Blog Profile              =
+=============================================*/
+
+.niwi-blog-profile-container {
+  margin: 20px auto 20px auto;
+  max-width: 860px;
+  color: var(--niwi-editor-text-color, #0a0a0a);
+  position: relative;
+  font-weight: 400;
+  text-align: left;
+
+  /*  */
+  background-color: var(--niwi-blog-profile-bg-color);
+  position: relative;
+  border-radius: 20px;
+  padding: 20px 20px 30px;
+}
+
+.dark .niwi-blog-profile-container {
+  background-color: var(--niwi-dark-blog-profile-bg-color);
+  color: var(--niwi-dark-editor-text-color);
+}
+
+.niwi-blog-profile-header {
+  font-size: 24px;
+  margin-bottom: 1rem;
+  padding-right: 40px;
+  transition: all 0.2s ease-in-out;
+}
+
+.niwi-blog-profile-header .link {
+  cursor: pointer;
+}
+
+.niwi-blog-profile-header .link:hover {
+  color: transparent;
+  background-clip: text;
+  background-image: linear-gradient(to right, #f43f5e, #7e22ce, #60a5fa);
+  display: inline-block;
+}
+
+.niwi-blog-profile-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.niwi-blog-profile-image {
+  width: 44px;
+  height: 44px;
+  border-radius: 22px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.niwi-blog-profile-right-section {
+  margin-left: 1rem;
+}
+
+.niwi-blog-profile-name-container {
+  margin-bottom: 0.25rem;
+  font-size: 16px;
+}
+.niwi-blog-profile-datetime-container {
+  font-size: 12px;
+}
+
+.niwi-blog-profile-actions {
+  /* mt-4 flex flex-row items-center gap-x-5 */
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 1.15rem;
+  padding-left: 6px;
+}
+
+.niwi-blog-profile-actions-container {
+  min-width: 40px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 0.25rem;
+  position: relative;
+}
+
+.niwi-blog-profile-actions-container.small {
+  min-width: 16px;
+  position: relative;
+  top: 1px;
+}
+
+.niwi-blog-profile-actions-container .counter {
+  font-size: 12px;
+  cursor: pointer;
+  top: 1px;
+  position: relative;
+}
+
+.niwi-blog-profile-actions-container .fill-stroke {
+  stroke: #aaa;
+}
+
+.dark .niwi-blog-profile-actions-container .fill-stroke {
+  stroke: #dfdfdf;
+}
+
+.niwi-blog-profile-actions-container .fill {
+  fill: #aaa;
+  stroke: none;
+}
+
+.dark .niwi-blog-profile-actions-container .fill {
+  fill: #dfdfdf;
+  stroke: none;
+}
+
+.niwi-blog-profile-actions-container.heart-container {
+  position: relative;
+}
+
+.niwi-blog-profile-actions-container.heart-container .heart {
+  width: 20px;
+  height: 20px;
+}
+
+.niwi-blog-profile-actions-container.heart-container .heart .icon {
+  width: 17px;
+  height: 17px;
+  position: relative;
+  left: 1.5px;
+  top: 1.5px;
+}
+
+.niwi-blog-profile-actions-container.standalone-icon {
+  top: 1.5px;
+}
+
+.niwi-blog-profile-actions-container:hover .animated-star {
+  opacity: 1;
+}
+
+.niwi-blog-profile-actions-container.message-container .message {
+  width: 19px;
+  height: 19px;
+  position: relative;
+  top: 1px;
+}
+
+.niwi-blog-profile-actions-container .animated-star {
+  opacity: 0;
+  width: 11px;
+  height: 11px;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.niwi-blog-switcher-animation {
+  /* Common animation properties */
+  animation-duration: 0.5s;
+  animation-delay: 0s;
+  animation-timing-function: ease-in-out;
+}
+
+.niwi-blog-switcher-animation.forward {
+  animation-name: niwi-blog-switcher-forward;
+  animation-fill-mode: forwards;
+}
+
+.niwi-blog-switcher-animation.reverse {
+  animation-name: niwi-blog-switcher-reverse;
+  animation-fill-mode: forwards;
+}
+
+@keyframes niwi-blog-switcher-forward {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes niwi-blog-switcher-reverse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/*=============================================
+=              Niwi Blog Setting              =
+=============================================*/
+.niwi-blog-setting-menu {
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  /* Display */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Position */
+  position: absolute;
+  top: 13px;
+  right: 13px;
+  column-gap: 4px;
+  /* Transition */
+  transition: all 0.2s ease-in-out;
+}
+
+.niwi-blog-setting-menu .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 4px;
+  background-color: #949494;
+  transition: all 0.2s ease-in-out;
+  position: relative;
+  top: 0;
+}
+
+.dark .niwi-blog-setting-menu .dot {
+  background-color: white;
+}
+
+.niwi-blog-setting-menu.active,
+.niwi-blog-setting-menu:hover {
+  background-color: #f4f4f5;
+}
+
+.dark .niwi-blog-setting-menu.active,
+.dark .niwi-blog-setting-menu:hover {
+  background-color: #282a2e;
+}
+
+.niwi-blog-setting-menu.active .dot,
+.niwi-blog-setting-menu:hover .dot {
+  transform: scale(1.1);
+
+  /*  */
+  top: 2px;
+  transition: all 0.1s ease-in-out;
+
+  animation-duration: 0.6s;
+  animation-fill-mode: forwards;
+  animation-timing-function: ease-in-out;
+}
+
+.niwi-blog-setting-menu.active .dot:nth-child(1),
+.niwi-blog-setting-menu:hover .dot:nth-child(1) {
+  background-color: #f43f5e;
+  box-shadow: 0px 0px 0.5px 0.5px #f43f5e;
+  animation-name: niwi-blog-setting-menu-animation;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+}
+
+.niwi-blog-setting-menu.active .dot:nth-child(2),
+.niwi-blog-setting-menu:hover .dot:nth-child(2) {
+  background-color: #7e22ce;
+  box-shadow: 0px 0px 0.5px 0.5px #7e22ce;
+  animation-name: niwi-blog-setting-menu-animation;
+  animation-delay: 0.12s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+}
+
+.niwi-blog-setting-menu.active .dot:nth-child(3),
+.niwi-blog-setting-menu:hover .dot:nth-child(3) {
+  background-color: #60a5fa;
+  box-shadow: 0px 0px 0.5px 0.5px #60a5fa;
+  animation-name: niwi-blog-setting-menu-animation;
+  animation-delay: 0.22s;
+  animation-fill-mode: forwards;
+  animation-iteration-count: infinite;
+}
+
+@keyframes niwi-blog-setting-menu-animation {
+  0% {
+    top: 1px;
+  }
+  50% {
+    top: -1px;
+  }
+  100% {
+    top: 1px;
+  }
+}
+
+.niwi-blog-setting-menu .menu {
+  position: absolute;
+  background-color: #f4f4f5;
+  font-size: 12px;
+  border-radius: 5px;
+  width: 120px;
+  top: 44px;
+  right: 8px;
+
+  scale: 0.95;
+  visibility: hidden;
+  opacity: 0;
+  transition: all 0.2s ease-in-out;
+}
+
+.niwi-blog-setting-menu .menu.active {
+  visibility: visible;
+  opacity: 1;
+  scale: 1;
+}
+
+.dark .niwi-blog-setting-menu .menu {
+  background-color: #282a2e;
+}
+
+.niwi-blog-setting-menu .menu::after {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 10px solid #f4f4f5;
+  content: "";
+  position: absolute;
+  top: -10px;
+  right: 1px;
+}
+
+.dark .niwi-blog-setting-menu .menu::after {
+  border-bottom: 10px solid #282a2e;
+}
+
+.niwi-blog-setting-menu .menu button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 10px;
+  padding-right: 10px;
+  font-weight: bold;
+}
+
+.niwi-blog-setting-menu .menu button:hover .icon {
+  stroke: #f43f5e;
+}
+
+.niwi-blog-setting-menu .menu button:hover .button-text {
+  color: transparent;
+  background-clip: text;
+  background-image: linear-gradient(to right, #f43f5e, #7e22ce, #60a5fa);
+  display: inline-block;
+}
+
+.niwi-blog-setting-menu .menu button:hover {
+  opacity: 0.75;
+}
+
+.niwi-blog-setting-menu .menu .icon {
+  display: inline-block;
+  margin-right: 0.45rem;
+}
+
+/*=============================================
+=           Niwi Blog Comment Modal           =
+=============================================*/
+
+.niwi-blog-comments-modal {
+  background-color: var(--niwi-overlay-content-bg-color, white);
+  background: white;
+  border-radius: 20px;
+
+  width: 100%;
+  max-width: 420px;
+  margin: 0px 0px 0px auto;
+
+  /* Shadow */
+  filter: drop-shadow(0 10px 8px rgb(0 0 0 / 0.04)),
+    drop-shadow(0 4px 3px rgb(0 0 0 / 0.1));
+
+  /* Animation */
+  animation-name: niwi-blog-comments-modal-animation;
+  animation-duration: 0.4s;
+  animation-delay: 0s;
+  animation-fill-mode: forwards;
+  animation-timing-function: ease-in-out;
+}
+
+@keyframes niwi-blog-comments-modal-animation {
+  0% {
+    opacity: 0;
+    transform: translateX(420px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dark .niwi-blog-comments-modal {
+  background-color: var(--niwi-dark-overlay-content-bg-color, #2b2d31);
+}
+
+/*=============================================
+=           Niwi Blog Comment Item            =
+=============================================*/
+
+.niwi-blog-comment-item-container {
+  display: flex;
+  flex-direction: column;
+  row-gap: 0.75rem;
+  padding-top: 20px;
+  padding-bottom: 40px;
+}
+
+.niwi-blog-comment-item {
+  position: relative;
+  border-radius: 1rem;
+  border-width: 1px;
+  padding-top: 14px;
+  padding-bottom: 16px;
+  margin-left: 22px;
+  margin-right: 22px;
+  padding-left: 10px;
+  padding-right: 10px;
+
+  background-color: #ffffff;
+  border-color: #efefef;
+}
+
+.dark .niwi-blog-comment-item {
+  background-color: #313339;
+  border-color: #313339;
+}
+
+.niwi-blog-comment-item .profile-section-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.niwi-blog-comment-item .profile-section-container .img-container {
+  border-radius: 16px;
+  width: 32px;
+  height: 32px;
+  background-color: #ebebeb;
+  overflow: hidden;
+}
+
+.dark .niwi-blog-comment-item .profile-section-container .img-container {
+  background-color: #2b2d31;
+}
+
+.niwi-blog-comment-item .profile-section-container .text-container {
+  margin-left: 0.75rem;
+}
+.niwi-blog-comment-item .profile-section-container .text-container .pf-text {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.niwi-blog-comment-item .profile-section-container .text-container .date-text {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.niwi-blog-comment-item .message-text {
+  margin-top: 0.2rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  padding-left: 2rem;
+  padding-right: 20px;
+  position: relative;
+}
+
+.niwi-blog-comment-item .message-text p,
+.niwi-blog-comment-item .message-text textarea {
+  padding-left: 0.75rem;
+  padding-top: 0.25rem;
+  padding-bottom: 0.24rem;
+  padding-right: 1.75rem;
+}
+
+.niwi-blog-comment-item .niwi-blog-setting-menu {
+  z-index: 100;
+}
+
+.niwi-blog-comment-item .textarea {
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  border-radius: 5px;
+  background-color: #efefef;
+  outline: none;
+  border: none;
+  box-sizing: border-box;
+}
+
+.dark .niwi-blog-comment-item .textarea {
+  background-color: #232528;
+}
+
+.niwi-blog-comment-item .message-text .sent-button {
+  position: absolute;
+  right: 1.65rem;
+  bottom: 0.5rem;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ff21be, #60a5fa);
+  opacity: 0.75;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.niwi-blog-comment-item .message-text .sent-button svg {
+  position: relative;
+  left: 0.5px;
+}
+
+/*=============================================
+=           Niwi Blog Share Setting           =
+=============================================*/
+.niwi-blog-share-icon-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+}
+
+.niwi-blog-share-icon-container .niwi-share-setting {
+  position: absolute;
+  width: 180px;
+  background-color: black;
+  top: -104px;
+  left: -13px;
+  border-radius: 14px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: start;
+  text-align: left;
+  background-color: #f4f4f5;
+  row-gap: 4px;
+
+  transition: all 0.2s ease-in-out;
+  scale: 0.95;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.niwi-blog-share-icon-container.active .niwi-share-setting {
+  scale: 1;
+  visibility: visible;
+  opacity: 1;
+}
+
+.dark .niwi-blog-share-icon-container .niwi-share-setting {
+  background-color: #282a2e;
+}
+
+.niwi-blog-share-icon-container .niwi-share-setting::after {
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #f4f4f5;
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 12px;
+}
+
+.dark .niwi-blog-share-icon-container .niwi-share-setting::after {
+  border-top: 10px solid #282a2e;
+}
+
+.niwi-blog-share-icon-container button {
+  padding: 0px 0;
+  display: block;
+}
+
+.niwi-blog-share-icon-container .color-text:hover {
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  background-image: linear-gradient(to right, #f43f5e, #7e22ce, #60a5fa);
+  display: inline-block;
+}
