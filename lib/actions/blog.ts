@@ -27,6 +27,84 @@ export async function createBlog(data: {
     return blogResult;
 }
 
+
+export interface Exam {
+  id: string;
+  title: string;
+  slug: string;
+  icon_url: string | null;
+  short_description: string | null;
+  category: string | null; // This fixes the specific error you saw
+  exam_date: string | null;
+  application_start_date: string | null;
+  application_end_date: string | null;
+  official_website_url: string | null;
+  syllabus_pdf_url: string | null;
+  roadmap_video_url: string | null;
+  
+  // JSON Fields
+  youtube_channels: any[] | null;
+  premium_courses: any[] | null;
+  study_materials: any[] | null;
+}
+
+export async function getexams(slug: string): Promise<Exam | null> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("exams")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+  if (error) {
+    console.error("Error fetching exam:", error);
+    return null;
+  }
+
+  // 2. Cast the data to our interface
+  return data as Exam;
+}
+
+export async function getProfile(userId: string) {
+  const supabase = await createSupabaseServerClient();
+  const result = await supabase
+    .from("profile")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  return result;
+}
+
+
+export async function updateProfile(data: {
+  id: string;
+  name: string;
+  bio?: string | null;
+  mobile_no?: string | null;
+  weekly_goal_hours?: number | null;
+  profile_image?: string | null;
+}) {
+  const supabase = await createSupabaseServerClient();
+
+  const result = await supabase
+    .from("profile")
+    .upsert({
+      ...data,
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (!result.error) {
+    // This refreshes the data on the page immediately after saving
+    revalidatePath("/profile"); 
+  }
+
+  return result;
+}
+
 export async function adddidigitalproduct(data: {
 	product_title: string,
 	product_description: string,
