@@ -66,6 +66,7 @@ export default function Navbar() {
   const navigation = [
     { name: "Articles", href: "/articles", icon: <FileText className="w-4 h-4" /> },
     { name: "News", href: "/news", icon: <Newspaper className="w-4 h-4" /> },
+    { name: "stenography", href: "/stenography", icon: <Newspaper className="w-4 h-4" /> },
     { name: "Jobs", href: "/jobs", icon: <Briefcase className="w-4 h-4" /> },
   ];
 

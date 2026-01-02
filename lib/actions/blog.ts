@@ -66,6 +66,140 @@ export async function getexams(slug: string): Promise<Exam | null> {
   return data as Exam;
 }
 
+
+export async function getUserStenoStats() {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  // Fetch attempts with the exercise details
+  const { data: attempts, error } = await supabase
+    .from("steno_attempts")
+    .select(`
+      id,
+      created_at,
+      accuracy_percentage,
+      errors_count,
+      time_taken_seconds,
+      steno_exercises (
+        title,
+        wpm
+      )
+    `)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error || !attempts) return null;
+
+  // Calculate Aggregates
+  const totalTests = attempts.length;
+  const avgAccuracy = totalTests > 0 
+    ? (attempts.reduce((acc, curr) => acc + Number(curr.accuracy_percentage), 0) / totalTests).toFixed(1)
+    : 0;
+
+  const bestAccuracy = totalTests > 0 
+    ? Math.max(...attempts.map(a => Number(a.accuracy_percentage)))
+    : 0;
+  
+  // --- THE FIX IS HERE ---
+  const graphData = attempts.slice(0, 10).reverse().map((a: any) => {
+    // Check if steno_exercises is an array or object to satisfy TypeScript
+    const exercise = Array.isArray(a.steno_exercises) 
+      ? a.steno_exercises[0] 
+      : a.steno_exercises;
+
+    return {
+      date: new Date(a.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      accuracy: Number(a.accuracy_percentage),
+      wpm: exercise?.wpm || 0 // Now safe to access
+    };
+  });
+
+  return {
+    stats: {
+      totalTests,
+      avgAccuracy,
+      bestAccuracy,
+    },
+    // Also fix the history mapping if you display titles there
+    history: attempts.map((a: any) => {
+       const exercise = Array.isArray(a.steno_exercises) 
+        ? a.steno_exercises[0] 
+        : a.steno_exercises;
+       
+       return {
+         ...a,
+         exerciseTitle: exercise?.title || "Unknown",
+         exerciseWpm: exercise?.wpm || 0
+       }
+    }),
+    graphData
+  };
+}
+
+
+export async function getStenoExercises() {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("steno_exercises")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching exercises:", error);
+    return [];
+  }
+
+  return data;
+}
+
+
+export type SaveProgressData = {
+  exercise_id: string;
+  accuracy: number;
+  errors: number;
+  user_transcript: string;
+  time_taken_seconds?: number; // Optional: track how long they took
+};
+
+export async function saveStenoProgress(data: SaveProgressData) {
+  const supabase = await createSupabaseServerClient();
+  
+  // 1. Get Current User
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return { error: "You must be logged in to save progress." };
+  }
+
+  // 2. Insert Attempt into Database
+  const { error } = await supabase
+    .from("steno_attempts")
+    .insert({
+      user_id: user.id,
+      exercise_id: data.exercise_id,
+      accuracy_percentage: data.accuracy,
+      errors_count: data.errors,
+      user_transcript: data.user_transcript,
+      time_taken_seconds: data.time_taken_seconds || 0,
+      created_at: new Date().toISOString(),
+    });
+
+  if (error) {
+    console.error("Error saving steno progress:", error);
+    return { error: "Failed to save your progress. Please try again." };
+  }
+
+  // 3. Revalidate Paths
+  // This ensures that when the user goes back to the dashboard, their new score is visible immediately.
+  revalidatePath("/steno/dashboard");
+  revalidatePath(`/steno/practice/${data.exercise_id}`);
+  
+  return { success: true };
+}
+
 export async function getProfile(userId: string) {
   const supabase = await createSupabaseServerClient();
   const result = await supabase

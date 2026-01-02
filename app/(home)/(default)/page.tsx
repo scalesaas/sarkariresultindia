@@ -11,11 +11,13 @@ import {
 } from 'lucide-react';
 const EXAM_CATEGORIES = ["UPSC", "SSC", "State PSC", "Teaching", "Railways", "Defence", "Banking"];
 import Navbar from '@/app/navbar/navbar';
+import Link from 'next/link';
 
 const EXAMS = [
   { id: 'ias', name: 'IAS Exam', category: 'UPSC', icon: '🏛️' },
   { id: 'upsc-csel', name: 'UPSC CSE', category: 'UPSC', icon: '⚖️' },
   { id: 'ssc-cgl', name: 'SSC CGL', category: 'SSC', icon: '📝' },
+  { id: 'stenography', name: 'Stenography', category: 'SSC', icon: '📝' },
   { id: 'rrb-ntpc', name: 'RRB NTPC', category: 'Railways', icon: '🚆' },
   { id: 'bank-po', name: 'IBPS PO', category: 'Banking', icon: '💰' },
   { id: 'nda', name: 'NDA', category: 'Defence', icon: '🎖️' },
@@ -120,6 +122,8 @@ export default function PreparelyLanding() {
                 ))}
               </div>
             </section>
+
+
 
             {/* Trending Test Series */}
             <section>
