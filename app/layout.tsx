@@ -11,8 +11,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: 'Hardware garage',
-  description: 'one of the best Enginner ',
+  title: 'Preparely - Free Online Stenography Practice Platform',
+  description: 'Preparely is a free online stenography practice platform designed to help aspiring stenographers enhance their skills through interactive lessons, real-time feedback, and comprehensive progress tracking. Whether you are a beginner or looking to refine your skills, Preparely offers a user-friendly interface and a variety of practice materials to support your learning journey.',
 }
 
 export default function RootLayout({

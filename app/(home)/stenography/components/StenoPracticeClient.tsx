@@ -5,9 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Progress } from "@/components/ui/progress"; // Ensure you have this shadcn component
 import { diffWords } from "diff"; 
-import StenoDashboard from "./StenoDashboard";
 import { saveStenoProgress } from "@/lib/actions/blog";
 import { 
   Play, 
@@ -20,7 +18,9 @@ import {
   AlertCircle, 
   Trophy, 
   Loader2,
-  Volume2
+  Volume2,
+  Timer, // Added Timer icon
+  Clock
 } from "lucide-react";
 
 // --- Types ---
@@ -38,8 +38,14 @@ interface StenoClientProps {
   previousBest: number | null;
 }
 
+// Sound effect URL (Mechanical Switch Sound)
+const TYPEWRITER_SOUND = "https://cdn.pixabay.com/download/audio/2022/03/24/audio_73e5517255.mp3?filename=mechanical-keyboard-typing-102912.mp3";
+
 export default function StenoPracticeClient({ exercise, user, previousBest }: StenoClientProps) {
   const router = useRouter();
+
+  // --- Configuration ---
+  const TIME_LIMIT_SECONDS = 300; // 5 Minutes time limit
 
   // --- State Management ---
   const [phase, setPhase] = useState<'listening' | 'typing' | 'result'>('listening');
@@ -49,14 +55,41 @@ export default function StenoPracticeClient({ exercise, user, previousBest }: St
   const [audioProgress, setAudioProgress] = useState(0);
   const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
+  
+  // Typewriter Sound Ref
+  const typeSoundRef = useRef<HTMLAudioElement | null>(null);
 
   // Typing State
   const [userInput, setUserInput] = useState("");
   const [startTime, setStartTime] = useState<number | null>(null);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(TIME_LIMIT_SECONDS);
   
   // Score State
   const [score, setScore] = useState({ accuracy: 0, errors: 0, wpm: 0 });
   const [isSaving, setIsSaving] = useState(false);
+
+  // --- Initialize Sound ---
+  useEffect(() => {
+    typeSoundRef.current = new Audio(TYPEWRITER_SOUND);
+    typeSoundRef.current.volume = 0.5; // Adjust volume as needed
+  }, []);
+
+  // --- Timer Logic ---
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (isTimerActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && isTimerActive) {
+      // Auto-submit when time finishes
+      calculateResult();
+    }
+
+    return () => clearInterval(interval);
+  }, [isTimerActive, timeLeft]);
 
   // --- Audio Handlers ---
   const togglePlay = () => {
@@ -92,23 +125,45 @@ export default function StenoPracticeClient({ exercise, user, previousBest }: St
   // --- Transition Logic ---
   const startTypingPhase = () => {
     setPhase('typing');
-    setStartTime(Date.now());
+    // Note: We do NOT start the timer here. We start it on first input.
     if (audioRef.current) {
       audioRef.current.pause();
       setIsPlaying(false);
-      audioRef.current.currentTime = 0; // Reset audio for review purposes
+    }
+  };
+
+  // --- Typing Input Handler ---
+  const handleTypingInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value;
+    setUserInput(text);
+
+    // 1. Play Sound
+    if (typeSoundRef.current) {
+      typeSoundRef.current.currentTime = 0; // Reset sound to start
+      typeSoundRef.current.play().catch(e => console.log("Audio interaction needed"));
+    }
+
+    // 2. Start Timer on First Keystroke
+    if (!isTimerActive && phase === 'typing') {
+      setIsTimerActive(true);
+      setStartTime(Date.now());
     }
   };
 
   // --- Scoring Engine ---
   const calculateResult = async () => {
-    if (!startTime) return;
+    // Stop Timer
+    setIsTimerActive(false);
+
+    // Use current time if started, or now if never started (0 wpm)
+    const start = startTime || Date.now();
     
     // 1. Calculate Typing Speed (WPM)
     const endTime = Date.now();
-    const durationInMinutes = (endTime - startTime) / 60000;
+    const durationInMinutes = (endTime - start) / 60000;
     const wordsTyped = userInput.trim().split(/\s+/).length;
-    // Prevent divide by zero if super fast
+    
+    // Prevent divide by zero/negative if super fast or instant
     const typingSpeedWPM = durationInMinutes > 0 ? Math.round(wordsTyped / durationInMinutes) : 0;
 
     // 2. Calculate Accuracy & Errors (The Core Logic)
@@ -120,17 +175,12 @@ export default function StenoPracticeClient({ exercise, user, previousBest }: St
     let errorCount = 0;
     
     diff.forEach(part => {
-      // Logic: 
-      // Added words (user typed extra) = Errors
-      // Removed words (user missed) = Errors
       if (part.added || part.removed) {
         errorCount += part.value.trim().split(/\s+/).length;
       }
     });
 
     const totalWords = cleanOriginal.split(/\s+/).length;
-    // Accuracy = (Total - Errors) / Total
-    // Clamp between 0 and 100
     let rawAccuracy = ((totalWords - errorCount) / totalWords) * 100;
     if (rawAccuracy < 0) rawAccuracy = 0;
     const accuracy = parseFloat(rawAccuracy.toFixed(2));
@@ -166,7 +216,6 @@ export default function StenoPracticeClient({ exercise, user, previousBest }: St
       <div className="leading-loose text-lg font-serif tracking-wide text-gray-800">
         {diff.map((part, index) => {
           if (part.added) {
-            // Mistake: User typed extra stuff
             return (
               <span key={index} className="bg-red-100 text-red-600 line-through decoration-red-400 mx-1 px-1 rounded decoration-2" title="Extra text">
                 {part.value}
@@ -174,14 +223,12 @@ export default function StenoPracticeClient({ exercise, user, previousBest }: St
             );
           }
           if (part.removed) {
-            // Mistake: User missed this text
             return (
               <span key={index} className="bg-green-100 text-green-700 font-semibold mx-1 px-1 rounded border-b-2 border-green-300" title="Missing text">
                 {part.value}
               </span>
             );
           }
-          // Correct text
           return <span key={index} className="text-gray-600">{part.value}</span>;
         })}
       </div>
@@ -283,18 +330,19 @@ export default function StenoPracticeClient({ exercise, user, previousBest }: St
              </div>
              <div>
                 <h2 className="font-bold text-gray-800 text-lg">Transcribing...</h2>
-                <p className="text-sm text-gray-500">Read your notes and type here.</p>
+                <p className="text-sm text-gray-500">
+                    {isTimerActive ? "Timer running..." : "Start typing to begin timer"}
+                </p>
              </div>
            </div>
            
            <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-             {/* Mini Audio Player for Review */}
-             <div className="flex items-center gap-3 bg-gray-100 rounded-full px-4 py-2 border border-gray-200">
-                <button onClick={togglePlay} className="hover:text-blue-600 text-gray-600 transition-colors">
-                   {isPlaying ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current" />}
-                </button>
-                <div className="text-xs font-mono text-gray-500 w-10">
-                    {audioRef.current ? formatTime(audioRef.current.currentTime) : "0:00"}
+             
+             {/* TIMER DISPLAY */}
+             <div className={`flex items-center gap-3 rounded-full px-5 py-2 border transition-colors ${timeLeft < 60 ? 'bg-red-50 border-red-200 text-red-600 animate-pulse' : 'bg-gray-100 border-gray-200 text-gray-700'}`}>
+                <Clock className="w-5 h-5" />
+                <div className="text-xl font-mono font-bold tracking-widest">
+                    {formatTime(timeLeft)}
                 </div>
              </div>
              
@@ -313,20 +361,14 @@ export default function StenoPracticeClient({ exercise, user, previousBest }: St
           <Textarea 
              autoFocus
              value={userInput}
-             onChange={(e) => setUserInput(e.target.value)}
-             placeholder="Start typing your transcription here..."
+             onChange={handleTypingInput}
+             placeholder="Start typing your transcription here... (Timer starts on first key)"
              className="w-full h-[65vh] p-8 text-xl leading-relaxed font-serif resize-none border-gray-200 shadow-inner bg-white focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all rounded-xl"
              spellCheck={false}
           />
         </div>
 
-        {/* Keep audio mounted so it doesn't reset position */}
-        <audio 
-            ref={audioRef} 
-            src={exercise.audio_url} 
-            onTimeUpdate={handleTimeUpdate}
-            onEnded={() => setIsPlaying(false)}
-        />
+        {/* NOTE: Audio element is purposefully REMOVED here so user cannot listen */}
       </div>
     );
   }
@@ -338,79 +380,79 @@ export default function StenoPracticeClient({ exercise, user, previousBest }: St
     <div className="max-w-6xl mx-auto py-10 px-4 animate-in zoom-in-95 duration-500">
        
        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <Trophy className="w-8 h-8 text-yellow-500" /> Performance Report
-            </h1>
-            <p className="text-gray-500 mt-2">Here is how you performed on "{exercise.title}"</p>
-          </div>
-          
-          <div className="flex gap-3">
-             <Button variant="outline" onClick={() => router.push('/steno')}>
-                Back to Dashboard
-             </Button>
-             <Button onClick={() => window.location.reload()}>
-                <RotateCcw className="w-4 h-4 mr-2" /> Retry Exercise
-             </Button>
-          </div>
+         <div>
+           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+               <Trophy className="w-8 h-8 text-yellow-500" /> Performance Report
+           </h1>
+           <p className="text-gray-500 mt-2">Here is how you performed on "{exercise.title}"</p>
+         </div>
+         
+         <div className="flex gap-3">
+            <Button variant="outline" onClick={() => router.push('/stenography')}>
+               Back to Dashboard
+            </Button>
+            <Button onClick={() => window.location.reload()}>
+               <RotateCcw className="w-4 h-4 mr-2" /> Retry Exercise
+            </Button>
+         </div>
        </div>
 
        {/* --- SCORE CARDS --- */}
        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          
-          {/* Accuracy Card */}
-          <Card className={`overflow-hidden border-t-4 shadow-md ${score.accuracy >= 95 ? 'border-t-green-500' : score.accuracy >= 80 ? 'border-t-yellow-500' : 'border-t-red-500'}`}>
-             <CardContent className="p-6 text-center relative">
-                <div className="text-5xl font-bold text-gray-900 mb-2">{score.accuracy}%</div>
-                <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">Accuracy</div>
-                {isSaving && (
-                    <div className="absolute top-4 right-4 flex items-center gap-1 text-xs text-gray-400">
-                        <Loader2 className="w-3 h-3 animate-spin" /> Saving...
-                    </div>
-                )}
-             </CardContent>
-          </Card>
+         
+         {/* Accuracy Card */}
+         <Card className={`overflow-hidden border-t-4 shadow-md ${score.accuracy >= 95 ? 'border-t-green-500' : score.accuracy >= 80 ? 'border-t-yellow-500' : 'border-t-red-500'}`}>
+            <CardContent className="p-6 text-center relative">
+               <div className="text-5xl font-bold text-gray-900 mb-2">{score.accuracy}%</div>
+               <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">Accuracy</div>
+               {isSaving && (
+                   <div className="absolute top-4 right-4 flex items-center gap-1 text-xs text-gray-400">
+                       <Loader2 className="w-3 h-3 animate-spin" /> Saving...
+                   </div>
+               )}
+            </CardContent>
+         </Card>
 
-          {/* Typing Speed Card */}
-          <Card className="overflow-hidden border-t-4 border-t-blue-500 shadow-md">
-             <CardContent className="p-6 text-center">
-                <div className="text-5xl font-bold text-gray-900 mb-2">{score.wpm}</div>
-                <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">Typing WPM</div>
-             </CardContent>
-          </Card>
+         {/* Typing Speed Card */}
+         <Card className="overflow-hidden border-t-4 border-t-blue-500 shadow-md">
+            <CardContent className="p-6 text-center">
+               <div className="text-5xl font-bold text-gray-900 mb-2">{score.wpm}</div>
+               <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">Typing WPM</div>
+            </CardContent>
+         </Card>
 
-          {/* Errors Card */}
-          <Card className="overflow-hidden border-t-4 border-t-red-500 shadow-md">
-             <CardContent className="p-6 text-center">
-                <div className="text-5xl font-bold text-gray-900 mb-2">{score.errors}</div>
-                <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">Total Errors</div>
-             </CardContent>
-          </Card>
+         {/* Errors Card */}
+         <Card className="overflow-hidden border-t-4 border-t-red-500 shadow-md">
+            <CardContent className="p-6 text-center">
+               <div className="text-5xl font-bold text-gray-900 mb-2">{score.errors}</div>
+               <div className="text-sm font-bold text-gray-400 uppercase tracking-widest">Total Errors</div>
+            </CardContent>
+         </Card>
        </div>
 
        {/* --- DETAILED ANALYSIS --- */}
        <Card className="shadow-lg border border-gray-200 overflow-hidden">
-          <CardHeader className="bg-gray-50 border-b border-gray-100 py-4 px-6 flex flex-row items-center justify-between">
-             <CardTitle className="text-lg text-gray-800 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-gray-500" /> Mistake Analysis
-             </CardTitle>
-             
-             {/* Legend */}
-             <div className="flex gap-4 text-xs font-semibold">
-                <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 bg-red-100 border border-red-300 rounded-sm"></span> 
-                    <span className="text-gray-600">Extra/Wrong</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                    <span className="w-3 h-3 bg-green-100 border border-green-300 rounded-sm"></span> 
-                    <span className="text-gray-600">Missed</span>
-                </div>
-             </div>
-          </CardHeader>
-          
-          <CardContent className="p-8 bg-white min-h-[300px]">
-             {diffVisualizer}
-          </CardContent>
+         <CardHeader className="bg-gray-50 border-b border-gray-100 py-4 px-6 flex flex-row items-center justify-between">
+            <CardTitle className="text-lg text-gray-800 flex items-center gap-2">
+               <AlertCircle className="w-5 h-5 text-gray-500" /> Mistake Analysis
+            </CardTitle>
+            
+            {/* Legend */}
+            <div className="flex gap-4 text-xs font-semibold">
+               <div className="flex items-center gap-1.5">
+                   <span className="w-3 h-3 bg-red-100 border border-red-300 rounded-sm"></span> 
+                   <span className="text-gray-600">Extra/Wrong</span>
+               </div>
+               <div className="flex items-center gap-1.5">
+                   <span className="w-3 h-3 bg-green-100 border border-green-300 rounded-sm"></span> 
+                   <span className="text-gray-600">Missed</span>
+               </div>
+            </div>
+         </CardHeader>
+         
+         <CardContent className="p-8 bg-white min-h-[300px]">
+            {diffVisualizer}
+         </CardContent>
        </Card>
 
     </div>

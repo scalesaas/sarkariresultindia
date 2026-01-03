@@ -1,9 +1,16 @@
 import React from "react";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { Lock, ChevronLeft, Star } from "lucide-react";
+import { 
+  Lock, 
+  ArrowLeft, 
+  Trophy, 
+  Crown, 
+  Sparkles, 
+  Zap 
+} from "lucide-react";
 import StenoPracticeClient from "../components/StenoPracticeClient";
 
 export default async function StenoPracticePage({ params }: { params: { id: string } }) {
@@ -23,51 +30,68 @@ export default async function StenoPracticePage({ params }: { params: { id: stri
     return notFound();
   }
 
-  // 3. Check Subscription Status (If the exercise is Premium)
+  // 3. Check Subscription Status
   let isPremiumUser = false;
   if (user) {
     const { data: profile } = await supabase
-      .from("profiles")
+      .from("profile")
       .select("is_premium")
       .eq("id", user.id)
       .single();
     isPremiumUser = profile?.is_premium || false;
   }
 
-  // --- ACCESS DENIED VIEW ---
-  // If exercise is Premium AND user is NOT Premium -> Block access
+  // --- ACCESS DENIED VIEW (Upsell UI) ---
   if (exercise.is_premium && !isPremiumUser) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center border border-yellow-100">
-          <div className="w-20 h-20 bg-yellow-50 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Lock className="w-10 h-10" />
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-50 via-white to-gray-50">
+        <div className="relative bg-white p-10 rounded-3xl shadow-2xl shadow-amber-100/50 max-w-lg w-full text-center border border-amber-100 overflow-hidden">
+          
+          {/* Background Decorative Elements */}
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-yellow-100 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-orange-50 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+
+          {/* Icon */}
+          <div className="relative w-24 h-24 bg-gradient-to-br from-yellow-100 to-amber-50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner ring-4 ring-white">
+            <Lock className="w-10 h-10 text-amber-600" strokeWidth={1.5} />
+            <div className="absolute bottom-1 right-1 bg-white p-1.5 rounded-full shadow-sm">
+              <Crown className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+            </div>
           </div>
           
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Premium Content</h1>
-          <p className="text-gray-500 mb-8 leading-relaxed">
-            This high-speed dictation <strong>({exercise.title})</strong> is reserved for premium members. Upgrade your plan to access our full library.
+          {/* Content */}
+          <h1 className="text-3xl font-extrabold text-gray-900 mb-3 tracking-tight">
+            Premium Masterclass
+          </h1>
+          <p className="text-gray-500 mb-8 leading-relaxed text-lg">
+            You've discovered <span className="font-semibold text-gray-800">"{exercise.title}"</span>. 
+            This advanced dictation is crafted exclusively for our Pro learners.
           </p>
           
-          <div className="space-y-3">
-            <Link href="/pricing" className="w-full block">
-              <Button className="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold h-12 text-lg shadow-md shadow-yellow-100">
-                Unlock Premium Access
+          <div className="space-y-4">
+            <Link href="/pricing" className="w-full block group">
+              <Button className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-bold h-14 text-lg rounded-xl shadow-lg shadow-amber-200 transition-all duration-300 transform group-hover:-translate-y-0.5">
+                <Sparkles className="w-5 h-5 mr-2 animate-pulse" />
+                Unlock Full Access
               </Button>
             </Link>
-            <Link href="/steno" className="w-full block">
-              <Button variant="ghost" className="w-full text-gray-500 hover:text-gray-900">
-                Back to Dashboard
+            <Link href="/stenography" className="w-full block">
+              <Button variant="ghost" className="w-full text-gray-400 hover:text-gray-700 hover:bg-gray-50 font-medium">
+                Return to Dashboard
               </Button>
             </Link>
+          </div>
+
+          <div className="mt-8 flex items-center justify-center gap-2 text-xs font-medium text-amber-600/70 bg-amber-50 py-2 rounded-lg">
+            <Zap className="w-3 h-3" />
+            <span>Join 2,000+ stenographers practicing today</span>
           </div>
         </div>
       </div>
     );
   }
 
-  // 4. Fetch User's Personal Best (Contextual Data)
-  // We want to show "Your Best: 98%" on the practice screen if they tried before
+  // 4. Fetch User's Personal Best
   let previousBest = null;
   if (user) {
     const { data: attempts } = await supabase
@@ -75,7 +99,7 @@ export default async function StenoPracticePage({ params }: { params: { id: stri
       .select("accuracy_percentage")
       .eq("user_id", user.id)
       .eq("exercise_id", exercise.id)
-      .order("accuracy_percentage", { ascending: false }) // Highest score first
+      .order("accuracy_percentage", { ascending: false })
       .limit(1);
 
     if (attempts && attempts.length > 0 && attempts[0]) {
@@ -83,31 +107,70 @@ export default async function StenoPracticePage({ params }: { params: { id: stri
     }
   }
 
-  // 5. Render the Client App
+  // 5. SUCCESS VIEW (The Practice Interface)
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 pt-20">
+    <div className="min-h-screen bg-[#FDFCF8]"> {/* Warm, paper-like background */}
       
-      {/* Top Navigation Bar */}
-      <div className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md border-b border-gray-200 z-50 px-4 md:px-8 flex items-center justify-between">
-         <Link href="/steno" className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors">
-            <ChevronLeft className="w-5 h-5" />
-            <span className="font-medium hidden sm:inline">Back to Library</span>
-         </Link>
-
-         {previousBest !== null && (
-            <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full border border-yellow-200 text-sm font-semibold">
-               <Star className="w-4 h-4 fill-current" />
-               <span>Personal Best: {previousBest}%</span>
+      {/* PROFESSIONAL HEADER */}
+      <header className="fixed top-0 left-0 right-0 h-18 bg-white/80 backdrop-blur-xl border-b border-amber-100 z-50 transition-all duration-200">
+        <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+          
+          {/* Left: Navigation */}
+          <Link 
+            href="/steno" 
+            className="group flex items-center gap-2 text-gray-500 hover:text-gray-900 transition-colors py-2 pr-4 rounded-lg"
+          >
+            <div className="w-8 h-8 rounded-full bg-gray-100 group-hover:bg-amber-100 flex items-center justify-center transition-colors">
+              <ArrowLeft className="w-4 h-4 text-gray-600 group-hover:text-amber-700" />
             </div>
-         )}
-      </div>
+            <span className="font-medium text-sm hidden sm:inline-block">Library</span>
+          </Link>
 
-      {/* Main Content Area */}
-      <StenoPracticeClient 
-        exercise={exercise} 
-        user={user} 
-        previousBest={previousBest} 
-      />
+          {/* Center: Exercise Context (Optional, good for focus) */}
+          <div className="hidden md:flex flex-col items-center">
+            <span className="text-xs font-bold text-amber-600 tracking-wider uppercase">Now Practicing</span>
+            <h2 className="text-sm font-semibold text-gray-800 truncate max-w-[200px]">{exercise.title}</h2>
+          </div>
+
+          {/* Right: Status Indicators */}
+          <div className="flex items-center gap-3">
+            
+            {/* LOGIC: Show Premium Active Badge if User is Premium AND Exercise is Premium */}
+            {isPremiumUser && exercise.is_premium && (
+              <div className="hidden sm:flex items-center gap-1.5 pl-1 pr-3 py-1 bg-gradient-to-r from-amber-100 to-yellow-50 border border-amber-200 rounded-full shadow-sm">
+                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm">
+                   <Crown className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                </div>
+                <div className="flex flex-col leading-none">
+                  <span className="text-[10px] font-bold text-amber-800 uppercase tracking-tight">Premium</span>
+                  <span className="text-[10px] font-medium text-amber-600">Active</span>
+                </div>
+              </div>
+            )}
+
+            {/* Personal Best Badge */}
+            {previousBest !== null && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-full shadow-sm">
+                <Trophy className="w-4 h-4 text-yellow-500" />
+                <div className="flex flex-col leading-none">
+                   <span className="text-[10px] text-gray-400 font-medium uppercase">Best</span>
+                   <span className="text-sm font-bold text-gray-900">{previousBest}%</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content Area - Centered Focus Mode */}
+      <main className="pt-24 pb-12 px-4 md:px-6 max-w-5xl mx-auto">
+        <StenoPracticeClient 
+          exercise={exercise} 
+          user={user} 
+          previousBest={previousBest} 
+        />
+      </main>
+
     </div>
   );
 }

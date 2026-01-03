@@ -8,6 +8,7 @@ import Navbar from "../navbar/navbar";
 import { IBlog } from "@/lib/types";
 import { Bell, Calendar, ChevronRight, FileText, Newspaper, Search, TrendingUp, Mail } from "lucide-react";
 
+
 // --- UTILITIES ---
 
 function extractImageUrlsFromMarkdown(markdown: string): string[] {

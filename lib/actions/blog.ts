@@ -417,6 +417,16 @@ export async function readmoreblog() {
 		.order("created_at", { ascending: true });
 }
 
+export async function readnewslink() {
+	const supabase = await createSupabaseServerClient();
+	return supabase
+		.from("news_links")
+		.select("*")
+		.eq("status", true)
+		.range(0, 35)
+		.order("created_at", { ascending: true });
+}
+
 
 export async function readcourse() {
 	const supabase = await createSupabaseServerClient();
