@@ -1,93 +1,103 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# AppDrop - APK & IPA Over-The-Air (OTA) Distribution Platform
+### Modern Diawi & Apps on Air Alternative
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+A platform for uploading, managing, and distributing iOS (`.ipa`) and Android (`.apk`) builds over-the-air. Built with **Next.js 14 (App Router)**, **AWS S3 Storage**, **Supabase Database & Google OAuth**, and **Apple OTA Wireless Manifest Protocol**.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+---
 
-## Features
+## 🚀 Key Features
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Middleware
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+- 📱 **iOS OTA Direct Installation (`itms-services://`)**:
+  - Automatically generates an Apple Enterprise & Ad-Hoc wireless manifest (`manifest.plist`).
+  - Testers tap **"Install App"** in Safari and the app installs directly to their home screen without cables or App Store.
+- 🤖 **Android Direct APK Installation**:
+  - Direct download and install for Android `.apk` builds with one tap.
+- ⚡ **Direct AWS S3 Presigned Uploads**:
+  - Bypasses server payload limits using S3 presigned PUT URLs, allowing multi-gigabyte build uploads with real-time percentage progress bars.
+- 🏢 **Multi-Environment Releases (DEV, UAT, PROD, STAGING)**:
+  - Convenient right-hand drawer in the console to tag and organize releases by environment.
+  - Separate builds for QA testing (`DEV`), client sign-offs (`UAT`), and final candidates (`PROD`).
+- 🔗 **Instant Public Link & Scannable QR Code**:
+  - Shareable public download link (`/download/<slug>` or `/d/<slug>`).
+  - Instant high-resolution scannable QR code to open and install directly from mobile cameras.
+- ⏳ **Smart Retention Policy**:
+  - **Free Tier**: Builds remain active for **20 days** (`expires_at = now() + 20 days`).
+  - **Paid / Pro Tier**: **Lifetime** permanent retention (`expires_at = null`).
+  - Visual badge displaying countdown and plan status.
+- 🔐 **Google OAuth & Supabase Authentication**:
+  - Sign in with Google or email/password.
+  - Personal dashboard to manage, filter, inspect, and delete releases.
 
-## Demo
+---
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
+## 🛠️ Tech Stack
 
-## Deploy to Vercel
+- **Framework**: Next.js 14 (App Router)
+- **Database & Auth**: Supabase (PostgreSQL + RLS + Google OAuth)
+- **Storage**: AWS S3 (`@aws-sdk/client-s3` & `@aws-sdk/s3-request-presigner`)
+- **Styling**: Tailwind CSS + Shadcn UI
+- **QR Code**: `qrcode` library
 
-Vercel deployment will guide you through creating a Supabase account and project.
+---
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+## ⚙️ Setup & Configuration
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This%20starter%20configures%20Supabase%20Auth%20to%20use%20cookies%2C%20making%20the%20user's%20session%20available%20throughout%20the%20entire%20Next.js%20app%20-%20Client%20Components%2C%20Server%20Components%2C%20Route%20Handlers%2C%20Server%20Actions%20and%20Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png&integration-ids=oac_VqOgBHqhEoFTPzGkPd7L0iH6)
+### 1. Database Setup (Supabase)
+1. Go to your [Supabase Project Dashboard](https://supabase.com/dashboard).
+2. Open the **SQL Editor** tab.
+3. Copy and run the entire script found in `supabase-schema.sql`.
+   This creates the `profiles`, `apps`, and `releases` tables, row-level security (RLS) policies, and auto-profile triggers.
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+### 2. Google OAuth Setup (Supabase)
+1. In your Supabase Dashboard, go to **Authentication** > **Providers** > **Google**.
+2. Enable Google sign-in and provide your Google OAuth Client ID and Secret (from Google Cloud Console).
+3. Set the Authorized Redirect URI to:
+   `https://<your-supabase-project-id>.supabase.co/auth/v1/callback`
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
-
-## Clone and run locally
-
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
-
-2. Create a Next.js app using the Supabase Starter template npx command
-
-   ```bash
-   npx create-next-app -e with-supabase
+### 3. AWS S3 Bucket Setup
+1. Create an S3 Bucket in the AWS Console (e.g. `my-appdrop-builds`).
+2. Configure **CORS** on your S3 bucket (under Permissions tab > Cross-origin resource sharing):
+   ```json
+   [
+     {
+       "AllowedHeaders": ["*"],
+       "AllowedMethods": ["GET", "PUT", "POST", "HEAD"],
+       "AllowedOrigins": ["*"],
+       "ExposeHeaders": ["ETag"]
+     }
+   ]
    ```
+3. Create an IAM User with `s3:PutObject`, `s3:GetObject`, and `s3:DeleteObject` permissions on the bucket.
 
-3. Use `cd` to change into the app's directory
+### 4. Environment Variables (`.env.local`)
+Create or edit `.env.local`:
+```bash
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1Ni...
 
-   ```bash
-   cd name-of-new-app
-   ```
+# AWS S3 Storage
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=AKIA...
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_S3_BUCKET_NAME=my-appdrop-builds
+# Optional: AWS_S3_CUSTOM_DOMAIN=https://cdn.yourdomain.com
 
-4. Rename `.env.local.example` to `.env.local` and update the following:
+# Domain
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-   ```
-   NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=[INSERT SUPABASE PROJECT API ANON KEY]
-   ```
+---
 
-   Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` can be found in [your Supabase project's API settings](https://app.supabase.com/project/_/settings/api)
+## 🏃 Run Locally
 
-5. You can now run the Next.js local development server:
+```bash
+# Install dependencies
+npm install
 
-   ```bash
-   npm run dev
-   ```
+# Start local development server
+npm run dev
+```
 
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
-
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
-
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
+Open [http://localhost:3000](http://localhost:3000) to view the homepage and upload builds.
+Navigate to [http://localhost:3000/dashboard](http://localhost:3000/dashboard) to view the distribution console.
