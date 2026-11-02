@@ -452,12 +452,12 @@ export default function DashboardClient({
             </div>
             <pre className="text-xs font-mono bg-slate-950 p-4 rounded-xl overflow-x-auto text-blue-300 leading-relaxed">
               {`# 1. Request Presigned S3 Upload URL
-curl -X POST https://your-droponair-domain.com/api/upload/presign \\
+curl -X POST https://droponair.saasscale.in/api/upload/presign \\
   -H "Content-Type: application/json" \\
   -d '{"fileName": "app-release.ipa", "contentType": "application/octet-stream", "folder": "builds/uat"}'
 
 # 2. Register Release in DropOnAir
-curl -X POST https://your-droponair-domain.com/api/releases \\
+curl -X POST https://droponair.saasscale.in/api/releases \\
   -H "Content-Type: application/json" \\
   -d '{
     "title": "My App",
@@ -1289,7 +1289,7 @@ curl -X POST https://your-droponair-domain.com/api/releases \\
                     cURL / Pipeline Release Registration
                   </span>
                   <pre className="text-xs font-mono text-slate-200 overflow-x-auto leading-relaxed">
-                    {`curl -X POST ${typeof window !== 'undefined' ? window.location.origin : 'https://droponair.com'}/api/releases \\
+                    {`curl -X POST ${typeof window !== 'undefined' ? window.location.origin : 'https://droponair.saasscale.in'}/api/releases \\
   -H "Content-Type: application/json" \\
   -d '{
     "app_id": "${selectedApp?.id || 'YOUR_APP_ID'}",

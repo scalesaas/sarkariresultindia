@@ -3,7 +3,7 @@ import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://droponair.com';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://droponair.saasscale.in';
 
   const staticEntries: MetadataRoute.Sitemap = [
     {

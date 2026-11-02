@@ -4,7 +4,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import Sessioprovider from '@/components/session-provider';
 import { Toaster } from '@/components/ui/toaster';
 
-const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://droponair.com';
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://droponair.saasscale.in';
 const adsenseClientId =
   process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-7557474007097933';
 
