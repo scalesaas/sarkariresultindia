@@ -84,7 +84,9 @@ export const metadata: Metadata = {
     images: ['/Droponairbanner.png'],
   },
   verification: {
-    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || 'google2e776c29761df1a7',
+    google:
+      process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION ||
+      '1jFN9QH7c3sW3kK2vs9CfelmUdQX3etitjPmEtSQIgc',
   },
   other: {
     'google-adsense-account': adsenseClientId,
@@ -122,6 +124,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta
+          name="google-site-verification"
+          content="1jFN9QH7c3sW3kK2vs9CfelmUdQX3etitjPmEtSQIgc"
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
