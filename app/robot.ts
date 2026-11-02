@@ -1,15 +1,16 @@
-import { MetadataRoute } from "next";
-export default function robots():MetadataRoute.Robots{
+import { MetadataRoute } from 'next';
 
+export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://droponair.com';
 
-    return{
-        rules:[
-            {
-            userAgent: "*",
-            allow:"/",
-            disallow: [""]
-        }
-        ],
-        sitemap: `${process.env.SITE_URL}/sitemap.xml`
-    }
+  return {
+    rules: [
+      {
+        userAgent: '*',
+        allow: ['/', '/premium', '/login', '/download/', '/d/'],
+        disallow: ['/api/', '/auth/'],
+      },
+    ],
+    sitemap: `${baseUrl}/sitemap.xml`,
+  };
 }

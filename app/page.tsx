@@ -32,6 +32,7 @@ import {
   Package,
 } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
+import GoogleAdUnit from '@/components/GoogleAdUnit';
 
 export default function LandingPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -905,8 +906,35 @@ end`,
           </section>
         )}
 
-        {/* 8. FAQ SECTION */}
+        {/* 8. FAQ SECTION + GOOGLE ADSENSE PLACEMENT */}
+        {!isPaidUser && (
+          <div className="px-6 pt-4">
+            <GoogleAdUnit
+              slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_LANDING || '3333333333'}
+              label="Sponsored Advertisement"
+              className="max-w-3xl"
+            />
+          </div>
+        )}
+
         <section className="py-12 px-6 max-w-3xl mx-auto space-y-6">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'FAQPage',
+                mainEntity: faqs.map((f) => ({
+                  '@type': 'Question',
+                  name: f.q,
+                  acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: f.a,
+                  },
+                })),
+              }),
+            }}
+          />
           <h2 className="text-2xl font-extrabold text-slate-900 text-center">Frequently Asked Questions</h2>
           <div className="space-y-3">
             {faqs.map((item, idx) => (

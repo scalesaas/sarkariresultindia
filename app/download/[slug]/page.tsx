@@ -59,12 +59,38 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!release) {
     return {
       title: 'App Release Not Found - DropOnAir',
+      robots: { index: false, follow: false },
     };
   }
 
+  const platformName = release.platform === 'ios' ? 'iOS (.IPA)' : 'Android (.APK)';
+  const title = `Download & Install ${release.title} v${release.version} (${release.environment}) - ${platformName} | DropOnAir`;
+  const description = `Over-The-Air (OTA) installation page for ${release.title} v${release.version} (Build ${release.build_number}) on ${platformName}. Scan QR code or tap to install directly via DropOnAir.`;
+
   return {
-    title: `Install ${release.title} v${release.version} (${release.environment}) - DropOnAir`,
-    description: `Download and install ${release.title} for ${release.platform?.toUpperCase()} (${release.environment} release) on DropOnAir.`,
+    title,
+    description,
+    keywords: [
+      release.title,
+      `${release.title} APK download`,
+      `${release.title} IPA install`,
+      'DropOnAir',
+      'OTA app install',
+      platformName,
+      release.bundle_id || '',
+    ],
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      images: ['/Droponairbanner.png'],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/Droponairbanner.png'],
+    },
   };
 }
 

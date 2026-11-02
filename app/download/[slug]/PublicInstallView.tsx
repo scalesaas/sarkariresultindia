@@ -19,6 +19,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import QRCodeViewer from '@/components/QRCodeViewer';
+import GoogleAdUnit from '@/components/GoogleAdUnit';
 
 interface PublicInstallViewProps {
   release: any;
@@ -153,6 +154,14 @@ export default function PublicInstallView({ release, baseUrl }: PublicInstallVie
 
       {/* Main Content Container */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 my-4 space-y-6">
+        {/* TOP GOOGLE ADSENSE BANNER (Only shown on Free-tier public URLs) */}
+        {!release.is_paid && (
+          <GoogleAdUnit
+            slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_TOP || '1111111111'}
+            label="Sponsored Advertisement"
+          />
+        )}
+
         {/* 1. CLEAN APP INSTALL CARD */}
         <div className="w-full max-w-xl bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
           {isExpired ? (
@@ -376,6 +385,14 @@ export default function PublicInstallView({ release, baseUrl }: PublicInstallVie
             </div>
           )}
         </div>
+
+        {/* BOTTOM GOOGLE ADSENSE BANNER (Only shown on Free-tier public URLs) */}
+        {!release.is_paid && (
+          <GoogleAdUnit
+            slot={process.env.NEXT_PUBLIC_ADSENSE_SLOT_BOTTOM || '2222222222'}
+            label="Sponsored Advertisement"
+          />
+        )}
 
         {/* 2. PROMOTIONAL / HIRE ME & PREMIUM ADVERTISEMENT CARD BY ASHISH (Hidden if release is already paid) */}
         {!release.is_paid && (
