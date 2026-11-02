@@ -6,59 +6,60 @@ import { cookies, headers } from 'next/headers';
 import PublicInstallView from './PublicInstallView';
 import { getReleaseFromMemory } from '@/lib/release-store';
 
+export const dynamic = 'force-dynamic';
+
 interface Props {
   params: { slug: string };
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+const isUuid = (val: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+async function fetchReleaseBySlugOrId(slugOrId: string) {
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  let release = null;
+  // 1. Try querying by slug first
+  const { data: bySlug, error: slugErr } = await supabase
+    .from('releases')
+    .select('*')
+    .eq('slug', slugOrId)
+    .maybeSingle();
 
-  try {
-    const { data } = await supabase
+  if (bySlug) return bySlug;
+
+  // 2. If valid UUID, try querying by id
+  if (isUuid(slugOrId)) {
+    const { data: byId } = await supabase
       .from('releases')
-      .select('title, version, environment, platform')
-      .or(`slug.eq.${params.slug},id.eq.${params.slug}`)
-      .single();
-    release = data;
-  } catch (e) {}
+      .select('*')
+      .eq('id', slugOrId)
+      .maybeSingle();
 
-  if (!release) {
-    release = getReleaseFromMemory(params.slug);
+    if (byId) return byId;
   }
+
+  // 3. Fallback to memory store if demo
+  return getReleaseFromMemory(slugOrId);
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const release = await fetchReleaseBySlugOrId(params.slug);
 
   if (!release) {
     return {
-      title: 'App Release Not Found',
+      title: 'App Release Not Found - AppsOnAir',
     };
   }
 
   return {
-    title: `Install ${release.title} v${release.version} (${release.environment})`,
+    title: `Install ${release.title} v${release.version} (${release.environment}) - AppsOnAir`,
     description: `Download and install ${release.title} for ${release.platform?.toUpperCase()} (${release.environment} release).`,
   };
 }
 
 export default async function DownloadPage({ params }: Props) {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-
-  let release = null;
-
-  try {
-    const { data } = await supabase
-      .from('releases')
-      .select('*')
-      .or(`slug.eq.${params.slug},id.eq.${params.slug}`)
-      .single();
-    release = data;
-  } catch (e) {}
-
-  if (!release) {
-    release = getReleaseFromMemory(params.slug);
-  }
+  const release = await fetchReleaseBySlugOrId(params.slug);
 
   if (!release) {
     notFound();

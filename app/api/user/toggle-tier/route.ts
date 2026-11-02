@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { getAuthenticatedSupabase } from '@/lib/supabase-api';
 
 export async function POST(req: NextRequest) {
   try {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-
-    const { data: { user } } = await supabase.auth.getUser();
+    const { supabase, user } = await getAuthenticatedSupabase(req);
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -17,12 +13,12 @@ export async function POST(req: NextRequest) {
       .from('profiles')
       .select('is_paid, plan_tier')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     const newIsPaid = !(profile?.is_paid ?? false);
     const newTier = newIsPaid ? 'paid' : 'free';
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('profiles')
       .upsert({
         id: user.id,
@@ -47,4 +43,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error?.message }, { status: 500 });
   }
 }
-

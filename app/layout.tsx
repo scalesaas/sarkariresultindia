@@ -4,8 +4,8 @@ import Sessioprovider from '@/components/session-provider';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata = {
-  title: 'AppDrop - APK & IPA Over-The-Air Testing & Distribution Platform',
-  description: 'Deploy, test, and distribute iOS .IPA and Android .APK builds over-the-air. Separate releases by DEV, UAT, and PROD with QR codes and instant install links.',
+  title: 'AppsOnAir - APK & IPA Over-The-Air Testing & Distribution Platform',
+  description: 'Deploy, test, and distribute iOS .IPA and Android .APK builds over-the-air. Built by Ashish.',
 };
 
 export default function RootLayout({
@@ -19,15 +19,15 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans antialiased min-h-screen bg-slate-950 text-slate-100">
+      <body className="font-sans antialiased min-h-screen bg-[#F8FAFC] text-slate-900">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           {children}

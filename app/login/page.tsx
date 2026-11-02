@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { Download, ArrowLeft, Mail, Lock, Sparkles, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Cloud, Mail, Lock, CheckCircle2, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
-import { signIn, signUp } from './actions';
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -19,8 +17,18 @@ export default function LoginPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  // If user is already logged in, redirect to dashboard
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        window.location.href = '/dashboard';
+      }
+    });
+  }, []);
+
   const handleGoogleLogin = async () => {
     try {
+      setLoading(true);
       await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -29,6 +37,7 @@ export default function LoginPage() {
       });
     } catch (e: any) {
       setMessage(e.message || 'Google sign in failed');
+      setLoading(false);
     }
   };
 
@@ -37,57 +46,61 @@ export default function LoginPage() {
     setLoading(true);
     setMessage('');
 
-    const formData = new FormData();
-    formData.append('email', email);
-    formData.append('password', password);
+    try {
+      if (isSignUp) {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+          },
+        });
 
-    if (isSignUp) {
-      const res = await signUp(formData);
-      if (res.error) {
-        setMessage(res.error);
-        setIsSuccess(false);
+        if (error) {
+          setMessage(error.message);
+          setIsSuccess(false);
+        } else if (data.session) {
+          window.location.href = '/dashboard';
+        } else {
+          setMessage('Account created! Check your email for the confirmation link, or sign in directly.');
+          setIsSuccess(true);
+        }
       } else {
-        setMessage(res.message || 'Verification link sent to your email.');
-        setIsSuccess(true);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          setMessage(error.message);
+          setIsSuccess(false);
+        } else if (data.session) {
+          window.location.href = '/dashboard';
+        }
       }
-    } else {
-      const res = await signIn(formData);
-      if (res.error) {
-        setMessage(res.error);
-        setIsSuccess(false);
-      } else {
-        window.location.href = '/dashboard';
-      }
+    } catch (err: any) {
+      setMessage(err?.message || 'Authentication error');
+      setIsSuccess(false);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-center items-center p-4">
-      {/* Back button */}
-      <div className="absolute top-6 left-6">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-white transition"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Home</span>
-        </Link>
-      </div>
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between items-center p-4 font-sans">
+      <div />
 
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative">
+      <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl p-8 shadow-xl relative my-8">
         {/* Logo and title */}
-        <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 mx-auto mb-3">
-            <Download className="w-6 h-6" />
+        <div className="text-center mb-7">
+          <div className="w-12 h-12 rounded-2xl bg-[#0066FF] flex items-center justify-center text-white shadow-lg shadow-blue-500/25 mx-auto mb-3.5">
+            <Cloud className="w-7 h-7 fill-white stroke-[#0066FF]" />
           </div>
-          <h2 className="text-2xl font-bold text-white tracking-tight">
-            {isSignUp ? 'Create your AppDrop account' : 'Welcome to AppDrop'}
+          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+            {isSignUp ? 'Create your AppsOnAir account' : 'Sign in to AppsOnAir'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
-            {isSignUp
-              ? 'Start testing and distributing IPA & APK builds'
-              : 'Sign in to access your releases and dashboard'}
+          <p className="text-xs text-slate-500 mt-1.5">
+            Sign in to access your private dashboard, create apps, and distribute IPA &amp; APK builds
           </p>
         </div>
 
@@ -95,7 +108,8 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={handleGoogleLogin}
-          className="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-900 font-semibold text-xs rounded-2xl shadow-md transition flex items-center justify-center gap-3 border border-slate-200"
+          disabled={loading}
+          className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-2xl shadow-sm transition flex items-center justify-center gap-3 border border-slate-200"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24">
             <path
@@ -120,45 +134,45 @@ export default function LoginPage() {
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-slate-800" />
+            <div className="w-full border-t border-slate-200" />
           </div>
-          <div className="relative flex justify-center text-[11px] uppercase tracking-wider text-slate-500">
-            <span className="bg-slate-900 px-3">Or continue with email</span>
+          <div className="relative flex justify-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <span className="bg-white px-3">Or continue with email</span>
           </div>
         </div>
 
         {/* Email / Password Form */}
         <form onSubmit={handleEmailAuth} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="developer@company.com"
-                className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#0066FF]"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-9 pr-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
+                className="w-full pl-10 pr-3 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#0066FF]"
               />
             </div>
           </div>
@@ -166,10 +180,10 @@ export default function LoginPage() {
           {message && (
             <div className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
               isSuccess 
-                ? 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400' 
-                : 'bg-red-500/10 border border-red-500/20 text-red-400'
+                ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' 
+                : 'bg-red-50 border border-red-200 text-red-700'
             }`}>
-              {isSuccess && <CheckCircle2 className="w-4 h-4 flex-shrink-0" />}
+              {isSuccess ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 flex-shrink-0" />}
               <span>{message}</span>
             </div>
           )}
@@ -177,21 +191,22 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-md transition"
+            className="w-full py-3 px-4 bg-[#0066FF] hover:bg-blue-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2"
           >
-            {loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+            <span>{loading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In to Dashboard'}</span>
           </button>
         </form>
 
         {/* Toggle sign in / sign up */}
-        <div className="mt-6 text-center text-xs text-slate-400">
+        <div className="mt-6 text-center text-xs text-slate-500">
           {isSignUp ? (
             <p>
               Already have an account?{' '}
               <button
                 type="button"
                 onClick={() => setIsSignUp(false)}
-                className="text-blue-400 hover:text-blue-300 font-semibold"
+                className="text-[#0066FF] hover:underline font-bold"
               >
                 Sign In
               </button>
@@ -202,13 +217,21 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setIsSignUp(true)}
-                className="text-blue-400 hover:text-blue-300 font-semibold"
+                className="text-[#0066FF] hover:underline font-bold"
               >
                 Sign Up
               </button>
             </p>
           )}
         </div>
+      </div>
+
+      {/* Developer Footer Banner */}
+      <div className="text-center text-xs text-slate-500 pb-4">
+        Built by <strong className="text-slate-800">Ashish</strong> • Want a premium version or hire me? Contact{' '}
+        <a href="mailto:ashishrohilla510@gmail.com" className="text-[#0066FF] font-semibold hover:underline">
+          ashishrohilla510@gmail.com
+        </a>
       </div>
     </div>
   );

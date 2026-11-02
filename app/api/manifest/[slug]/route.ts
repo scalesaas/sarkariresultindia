@@ -3,6 +3,11 @@ import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { getReleaseFromMemory } from '@/lib/release-store';
 
+export const dynamic = 'force-dynamic';
+
+const isUuid = (val: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
 export async function GET(
   req: NextRequest,
   { params }: { params: { slug: string } }
@@ -15,14 +20,23 @@ export async function GET(
 
     let release = null;
 
-    try {
-      const { data } = await supabase
+    // 1. Query by slug
+    const { data: bySlug } = await supabase
+      .from('releases')
+      .select('*')
+      .eq('slug', slug)
+      .maybeSingle();
+
+    if (bySlug) {
+      release = bySlug;
+    } else if (isUuid(slug)) {
+      const { data: byId } = await supabase
         .from('releases')
         .select('*')
-        .or(`slug.eq.${slug},id.eq.${slug}`)
-        .single();
-      release = data;
-    } catch (e) {}
+        .eq('id', slug)
+        .maybeSingle();
+      release = byId;
+    }
 
     if (!release) {
       release = getReleaseFromMemory(slug);

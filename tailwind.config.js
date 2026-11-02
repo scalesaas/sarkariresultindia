@@ -6,7 +6,7 @@ module.exports = {
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
-	],
+  ],
   theme: {
     container: {
       center: true,
@@ -17,15 +17,13 @@ module.exports = {
     },
     extend: {
       fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'Gilroy', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
         gilroy: ['Gilroy', 'sans-serif'],
         gilroy_bold: ['GilroyBold', 'sans-serif'],
         gilroy_medium: ['GilroyMedium', 'sans-serif'],
-        gilroy_light: ['GilroyLight', 'sans-serif'],	
-        charter_regular:['CharterSerif',  ],
-        KievitSerif:['KievitSerif'],
-        hevelticneu:['hevelticneu', 'sans-serif',],
-        arial:['arial', 'san-serif'],
-        },
+        gilroy_light: ['GilroyLight', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -83,4 +81,4 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-}
+};
