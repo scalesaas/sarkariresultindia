@@ -1,18 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadToS3, isS3Configured } from '@/lib/s3';
+import {
+  uploadToS3,
+  getS3Config,
+  initMultipartUpload,
+  uploadMultipartChunk,
+  completeMultipartUpload,
+} from '@/lib/s3';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 120; // Allow sufficient time for large builds
+export const maxDuration = 120;
 
 export async function POST(req: NextRequest) {
   try {
-    if (!isS3Configured) {
+    const { configured } = getS3Config();
+    if (!configured) {
       return NextResponse.json(
         { error: 'AWS S3 credentials are not configured on the server.' },
         { status: 500 }
       );
     }
 
+    const action = req.headers.get('x-upload-action');
+
+    // 1. Initialize S3 Multipart Upload (for chunked 5MB uploads that never hit 413 Payload Too Large)
+    if (action === 'init') {
+      const { fileName, folder = 'builds' } = await req.json();
+      const mime = fileName?.endsWith('.ipa')
+        ? 'application/octet-stream'
+        : 'application/vnd.android.package-archive';
+
+      const initData = await initMultipartUpload({
+        fileName: fileName || 'build.ipa',
+        contentType: mime,
+        folder,
+      });
+
+      return NextResponse.json({
+        success: true,
+        ...initData,
+      });
+    }
+
+    // 2. Upload a single 5MB chunk part
+    if (action === 'part') {
+      const uploadId = req.headers.get('x-upload-id') || '';
+      const s3Key = req.headers.get('x-s3-key') || '';
+      const partNumber = parseInt(req.headers.get('x-part-number') || '1', 10);
+
+      const arrayBuffer = await req.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const partRes = await uploadMultipartChunk({
+        uploadId,
+        s3Key,
+        partNumber,
+        buffer,
+      });
+
+      return NextResponse.json({
+        success: true,
+        ...partRes,
+      });
+    }
+
+    // 3. Complete S3 Multipart Upload
+    if (action === 'complete') {
+      const { uploadId, s3Key, parts } = await req.json();
+      const completeRes = await completeMultipartUpload({
+        uploadId,
+        s3Key,
+        parts,
+      });
+
+      return NextResponse.json({
+        success: true,
+        ...completeRes,
+      });
+    }
+
+    // 4. Legacy single-payload upload (for small files <= 5MB)
     const contentType = req.headers.get('content-type') || '';
     let buffer: Buffer;
     let fileName = req.headers.get('x-file-name') || 'build.ipa';
@@ -28,7 +94,6 @@ export async function POST(req: NextRequest) {
       fileName = file.name;
       folder = (formData.get('folder') as string) || folder;
     } else {
-      // Direct raw binary stream upload
       const arrayBuffer = await req.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
     }

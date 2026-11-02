@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPresignedUploadUrl, isS3Configured } from '@/lib/s3';
+import { getPresignedUploadUrl, getS3Config } from '@/lib/s3';
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,9 +11,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'fileName is required' }, { status: 400 });
     }
 
+    const { configured } = getS3Config();
+
     // Check if S3 credentials are configured in environment
-    if (!isS3Configured) {
-      // Provide a simulated/local direct mode fallback with friendly notification
+    if (!configured) {
       const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
       const timestamp = Date.now();
       const mockKey = `${folder}/${timestamp}_${cleanFileName}`;
@@ -26,7 +29,11 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const mime = contentType || (fileName.endsWith('.ipa') ? 'application/octet-stream' : 'application/vnd.android.package-archive');
+    const mime =
+      contentType ||
+      (fileName.endsWith('.ipa')
+        ? 'application/octet-stream'
+        : 'application/vnd.android.package-archive');
 
     const result = await getPresignedUploadUrl({
       fileName,
@@ -46,4 +53,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

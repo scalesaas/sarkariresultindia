@@ -88,21 +88,41 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between items-center p-4 font-sans">
-      <div />
+      {/* Top Bar */}
+      <div className="w-full max-w-5xl flex items-center justify-between pt-2 px-2">
+        <a href="/" className="flex items-center gap-2 text-xs font-bold text-slate-700 hover:text-[#0066FF] transition">
+          <img src="/logo.png" alt="DropOnAir Logo" className="w-7 h-7 object-contain" />
+          <span>DropOnAir</span>
+        </a>
+        <a
+          href="/premium"
+          className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-black text-white text-xs font-bold inline-flex items-center gap-1.5 transition"
+        >
+          <Sparkles className="w-3 h-3 text-amber-400" />
+          <span>Buy Premium</span>
+        </a>
+      </div>
 
-      <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl p-8 shadow-xl relative my-8">
-        {/* Logo and title */}
-        <div className="text-center mb-7">
-          <div className="w-12 h-12 rounded-2xl bg-[#0066FF] flex items-center justify-center text-white shadow-lg shadow-blue-500/25 mx-auto mb-3.5">
-            <Cloud className="w-7 h-7 fill-white stroke-[#0066FF]" />
-          </div>
-          <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-            {isSignUp ? 'Create your AppsOnAir account' : 'Sign in to AppsOnAir'}
-          </h2>
-          <p className="text-xs text-slate-500 mt-1.5">
-            Sign in to access your private dashboard, create apps, and distribute IPA &amp; APK builds
-          </p>
+      <div className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-xl relative my-8">
+        {/* Top Banner Image */}
+        <div className="w-full bg-[#05081c] relative overflow-hidden">
+          <img
+            src="/Droponairbanner.png"
+            alt="DropOnAir Banner"
+            className="w-full h-32 object-cover object-center"
+          />
         </div>
+
+        <div className="p-8">
+          {/* Title */}
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+              {isSignUp ? 'Create your DropOnAir account' : 'Sign in to DropOnAir'}
+            </h2>
+            <p className="text-xs text-slate-500 mt-1.5">
+              Sign in to access your DropOnAir dashboard, create apps, and distribute IPA &amp; APK builds
+            </p>
+          </div>
 
         {/* Google Sign In Button */}
         <button
@@ -224,11 +244,16 @@ export default function LoginPage() {
             </p>
           )}
         </div>
+        </div>
       </div>
 
       {/* Developer Footer Banner */}
       <div className="text-center text-xs text-slate-500 pb-4">
-        Built by <strong className="text-slate-800">Ashish</strong> • Want a premium version or hire me? Contact{' '}
+        Built by <strong className="text-slate-800">Ashish</strong> •{' '}
+        <a href="/premium" className="text-[#0066FF] font-semibold hover:underline">
+          Buy Premium / Contact Me
+        </a>{' '}
+        •{' '}
         <a href="mailto:ashishrohilla510@gmail.com" className="text-[#0066FF] font-semibold hover:underline">
           ashishrohilla510@gmail.com
         </a>

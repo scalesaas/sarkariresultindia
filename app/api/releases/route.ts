@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedSupabase } from '@/lib/supabase-api';
-import { deleteFromS3 } from '@/lib/s3';
+import { deleteFromS3, uploadIosManifestToS3 } from '@/lib/s3';
 import { saveReleaseToMemory } from '@/lib/release-store';
 
 export const dynamic = 'force-dynamic';
@@ -176,6 +176,21 @@ export async function POST(req: NextRequest) {
       : new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString();
 
     const slug = generateSlug();
+
+    // If iOS build, pre-upload manifest.plist directly to S3 for instant HTTPS OTA installation
+    if (platform === 'ios') {
+      try {
+        await uploadIosManifestToS3({
+          slug,
+          ipaUrl: file_url,
+          bundleId: cleanBundleId,
+          version,
+          title: cleanTitle,
+        });
+      } catch (manifestErr) {
+        console.warn('Could not pre-upload iOS manifest to S3:', manifestErr);
+      }
+    }
 
     const newRelease = {
       slug,

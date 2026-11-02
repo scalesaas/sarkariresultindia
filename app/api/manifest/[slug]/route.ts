@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import { getReleaseFromMemory } from '@/lib/release-store';
+import { getReleaseFromMemory, saveReleaseToMemory } from '@/lib/release-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,31 +15,33 @@ export async function GET(
   const { slug } = params;
 
   try {
-    const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
-
-    let release = null;
-
-    // 1. Query by slug
-    const { data: bySlug } = await supabase
-      .from('releases')
-      .select('*')
-      .eq('slug', slug)
-      .maybeSingle();
-
-    if (bySlug) {
-      release = bySlug;
-    } else if (isUuid(slug)) {
-      const { data: byId } = await supabase
-        .from('releases')
-        .select('*')
-        .eq('id', slug)
-        .maybeSingle();
-      release = byId;
-    }
+    // 1. Check fast in-memory cache first (<1ms) so iOS OTA starts immediately
+    let release = getReleaseFromMemory(slug);
 
     if (!release) {
-      release = getReleaseFromMemory(slug);
+      const cookieStore = cookies();
+      const supabase = createClient(cookieStore);
+
+      const { data: bySlug } = await supabase
+        .from('releases')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle();
+
+      if (bySlug) {
+        release = bySlug;
+      } else if (isUuid(slug)) {
+        const { data: byId } = await supabase
+          .from('releases')
+          .select('*')
+          .eq('id', slug)
+          .maybeSingle();
+        release = byId;
+      }
+
+      if (release) {
+        saveReleaseToMemory(release);
+      }
     }
 
     if (!release) {

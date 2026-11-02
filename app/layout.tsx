@@ -4,8 +4,24 @@ import Sessioprovider from '@/components/session-provider';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata = {
-  title: 'AppsOnAir - APK & IPA Over-The-Air Testing & Distribution Platform',
-  description: 'Deploy, test, and distribute iOS .IPA and Android .APK builds over-the-air. Built by Ashish.',
+  title: 'DropOnAir - APK & IPA Over-The-Air Testing & Distribution Platform',
+  description: 'Deploy, test, and distribute iOS .IPA and Android .APK builds over-the-air in seconds. Built by Ashish.',
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
+  openGraph: {
+    title: 'DropOnAir - APK & IPA Over-The-Air Testing & Distribution Platform',
+    description: 'Deploy, test, and distribute iOS .IPA and Android .APK builds over-the-air in seconds.',
+    images: ['/Droponairbanner.png'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DropOnAir - APK & IPA Over-The-Air Testing & Distribution Platform',
+    description: 'Deploy, test, and distribute iOS .IPA and Android .APK builds over-the-air in seconds.',
+    images: ['/Droponairbanner.png'],
+  },
 };
 
 export default function RootLayout({

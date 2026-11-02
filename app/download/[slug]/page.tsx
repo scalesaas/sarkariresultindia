@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { cache } from 'react';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { cookies, headers } from 'next/headers';
 import PublicInstallView from './PublicInstallView';
-import { getReleaseFromMemory } from '@/lib/release-store';
+import { getReleaseFromMemory, saveReleaseToMemory } from '@/lib/release-store';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,20 +15,28 @@ interface Props {
 const isUuid = (val: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
-async function fetchReleaseBySlugOrId(slugOrId: string) {
+// Deduplicated across generateMetadata + DownloadPage & cached in memory
+const fetchReleaseBySlugOrId = cache(async (slugOrId: string) => {
+  // 1. Check fast in-memory store first (<1ms)
+  const cached = getReleaseFromMemory(slugOrId);
+  if (cached) return cached;
+
   const cookieStore = cookies();
   const supabase = createClient(cookieStore);
 
-  // 1. Try querying by slug first
-  const { data: bySlug, error: slugErr } = await supabase
+  // 2. Query by slug
+  const { data: bySlug } = await supabase
     .from('releases')
     .select('*')
     .eq('slug', slugOrId)
     .maybeSingle();
 
-  if (bySlug) return bySlug;
+  if (bySlug) {
+    saveReleaseToMemory(bySlug);
+    return bySlug;
+  }
 
-  // 2. If valid UUID, try querying by id
+  // 3. If valid UUID, query by id
   if (isUuid(slugOrId)) {
     const { data: byId } = await supabase
       .from('releases')
@@ -36,25 +44,27 @@ async function fetchReleaseBySlugOrId(slugOrId: string) {
       .eq('id', slugOrId)
       .maybeSingle();
 
-    if (byId) return byId;
+    if (byId) {
+      saveReleaseToMemory(byId);
+      return byId;
+    }
   }
 
-  // 3. Fallback to memory store if demo
-  return getReleaseFromMemory(slugOrId);
-}
+  return null;
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const release = await fetchReleaseBySlugOrId(params.slug);
 
   if (!release) {
     return {
-      title: 'App Release Not Found - AppsOnAir',
+      title: 'App Release Not Found - DropOnAir',
     };
   }
 
   return {
-    title: `Install ${release.title} v${release.version} (${release.environment}) - AppsOnAir`,
-    description: `Download and install ${release.title} for ${release.platform?.toUpperCase()} (${release.environment} release).`,
+    title: `Install ${release.title} v${release.version} (${release.environment}) - DropOnAir`,
+    description: `Download and install ${release.title} for ${release.platform?.toUpperCase()} (${release.environment} release) on DropOnAir.`,
   };
 }
 

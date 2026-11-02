@@ -58,21 +58,27 @@ export default function PublicInstallView({ release, baseUrl }: PublicInstallVie
     ? window.location.href 
     : `${baseUrl}/download/${release.slug}`;
 
-  // iOS OTA Install URL: itms-services://?action=download-manifest&url=https://<domain>/api/manifest/<slug>
-  const manifestUrl = `${baseUrl.replace('http://', 'https://')}/api/manifest/${release.slug}`;
+  // iOS OTA Install URL:
+  // If hosted on localhost/HTTP, use the pre-uploaded S3 HTTPS manifest if available, otherwise /api/manifest/<slug>
+  const isLocalOrHttp = baseUrl.includes('localhost') || baseUrl.startsWith('http://');
+  const s3Origin = release.file_url?.includes('.amazonaws.com/')
+    ? release.file_url.split('.amazonaws.com/')[0] + '.amazonaws.com'
+    : null;
+  const manifestUrl =
+    isLocalOrHttp && s3Origin
+      ? `${s3Origin}/manifests/${release.slug}.plist`
+      : `${baseUrl.replace('http://', 'https://')}/api/manifest/${release.slug}`;
   const iosOtaUrl = `itms-services://?action=download-manifest&url=${encodeURIComponent(manifestUrl)}`;
 
-  const trackDownload = async () => {
-    try {
-      await fetch('/api/releases/download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: release.slug }),
-      });
-      setInstallCount((prev: number) => prev + 1);
-    } catch (e) {
-      console.error('Download tracking failed:', e);
-    }
+  const trackDownload = () => {
+    setInstallCount((prev: number) => prev + 1);
+    // Non-blocking fire-and-forget analytics so installation starts in 0ms
+    fetch('/api/releases/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: release.slug }),
+      keepalive: true,
+    }).catch(() => {});
   };
 
   const handleInstallClick = () => {
@@ -112,19 +118,17 @@ export default function PublicInstallView({ release, baseUrl }: PublicInstallVie
       {/* Top Brand Bar */}
       <header className="px-6 py-3.5 border-b border-slate-200/90 bg-white sticky top-0 z-30 shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#0066FF] flex items-center justify-center text-white shadow-sm">
-              <Cloud className="w-5 h-5 fill-white stroke-[#0066FF]" />
-            </div>
+          <a href="/" className="flex items-center gap-2.5">
+            <img src="/logo.png" alt="DropOnAir Logo" className="w-8 h-8 object-contain" />
             <div>
               <span className="font-extrabold text-base text-slate-900 tracking-tight block leading-none">
-                AppsOnAir
+                DropOnAir
               </span>
               <span className="text-[10px] font-semibold text-slate-400">
                 Built by Ashish
               </span>
             </div>
-          </div>
+          </a>
 
           <div className="flex items-center gap-2.5">
             <button
@@ -134,13 +138,15 @@ export default function PublicInstallView({ release, baseUrl }: PublicInstallVie
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
               {copied ? 'Link Copied' : 'Share Link'}
             </button>
-            <a
-              href="mailto:ashishrohilla510@gmail.com?subject=Hire%20Ashish%20/%20Premium%20App%20Distribution%20Inquiry"
-              className="px-3.5 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-xl shadow-sm transition hidden sm:inline-flex items-center gap-1.5"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Hire Ashish / Get Premium</span>
-            </a>
+            {!release.is_paid && (
+              <a
+                href="/premium"
+                className="px-3.5 py-1.5 text-xs font-bold text-white bg-slate-900 hover:bg-black rounded-xl shadow-sm transition hidden sm:inline-flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Buy Premium / Contact</span>
+              </a>
+            )}
           </div>
         </div>
       </header>
@@ -161,13 +167,20 @@ export default function PublicInstallView({ release, baseUrl }: PublicInstallVie
                   Contact Ashish at <strong>ashishrohilla510@gmail.com</strong> for lifetime premium hosting.
                 </p>
               </div>
-              <div className="pt-3">
+              <div className="pt-3 flex items-center justify-center gap-3">
                 <a
-                  href="mailto:ashishrohilla510@gmail.com?subject=Upgrade%20to%20Lifetime%20Premium"
+                  href="/premium"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0066FF] hover:bg-blue-600 text-white font-semibold text-xs rounded-xl transition shadow-sm"
                 >
+                  <Sparkles className="w-4 h-4" />
+                  Buy Lifetime Premium
+                </a>
+                <a
+                  href="mailto:ashishrohilla510@gmail.com?subject=Upgrade%20to%20Lifetime%20Premium"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs rounded-xl transition"
+                >
                   <Mail className="w-4 h-4" />
-                  Contact for Lifetime Premium
+                  Email Ashish
                 </a>
               </div>
             </div>
@@ -364,46 +377,48 @@ export default function PublicInstallView({ release, baseUrl }: PublicInstallVie
           )}
         </div>
 
-        {/* 2. PROMOTIONAL / HIRE ME & PREMIUM ADVERTISEMENT CARD BY ASHISH */}
-        <div className="w-full max-w-xl bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-800 relative overflow-hidden">
-          <div className="absolute -right-12 -top-12 w-40 h-40 bg-blue-500/15 rounded-full blur-2xl pointer-events-none" />
-          <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-            <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[11px] font-bold">
-                <Sparkles className="w-3 h-3" />
-                <span>BUILT BY ASHISH</span>
+        {/* 2. PROMOTIONAL / HIRE ME & PREMIUM ADVERTISEMENT CARD BY ASHISH (Hidden if release is already paid) */}
+        {!release.is_paid && (
+          <div className="w-full max-w-xl bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 text-white rounded-3xl p-6 sm:p-7 shadow-xl border border-slate-800 relative overflow-hidden">
+            <div className="absolute -right-12 -top-12 w-40 h-40 bg-blue-500/15 rounded-full blur-2xl pointer-events-none" />
+            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-400/15 border border-amber-400/30 text-amber-300 text-[11px] font-bold">
+                  <Sparkles className="w-3 h-3" />
+                  <span>BUILT BY ASHISH</span>
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold tracking-tight text-white">
+                  Want a Premium Plan or Looking to Hire Me?
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed max-w-md">
+                  Need lifetime app retention, custom white-label OTA distribution, or an experienced developer for your next iOS, Android, or Full-Stack project? Reach out directly:
+                </p>
+                <div className="pt-1 flex flex-wrap items-center gap-2 text-xs font-mono text-blue-300">
+                  <Mail className="w-3.5 h-3.5 text-blue-400" />
+                  <span>ashishrohilla510@gmail.com</span>
+                </div>
               </div>
-              <h3 className="text-base sm:text-lg font-extrabold tracking-tight text-white">
-                Want a Premium Plan or Looking to Hire Me?
-              </h3>
-              <p className="text-xs text-slate-300 leading-relaxed max-w-md">
-                Need lifetime app retention, custom white-label OTA distribution, or an experienced developer for your next iOS, Android, or Full-Stack project? Reach out directly:
-              </p>
-              <div className="pt-1 flex flex-wrap items-center gap-2 text-xs font-mono text-blue-300">
-                <Mail className="w-3.5 h-3.5 text-blue-400" />
-                <span>ashishrohilla510@gmail.com</span>
-              </div>
-            </div>
 
-            <div className="flex sm:flex-col gap-2 w-full sm:w-auto shrink-0">
-              <a
-                href="mailto:ashishrohilla510@gmail.com?subject=Hire%20Ashish%20/%20Premium%20Plan%20Inquiry"
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0066FF] hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md transition whitespace-nowrap"
-              >
-                <Briefcase className="w-3.5 h-3.5" />
-                <span>Hire Me / Premium</span>
-              </a>
-              <button
-                type="button"
-                onClick={copyDeveloperEmail}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition whitespace-nowrap"
-              >
-                {emailCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{emailCopied ? 'Email Copied!' : 'Copy Email'}</span>
-              </button>
+              <div className="flex sm:flex-col gap-2 w-full sm:w-auto shrink-0">
+                <a
+                  href="/premium"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#0066FF] hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md transition whitespace-nowrap"
+                >
+                  <Briefcase className="w-3.5 h-3.5" />
+                  <span>Buy Premium / Contact</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={copyDeveloperEmail}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition whitespace-nowrap"
+                >
+                  {emailCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{emailCopied ? 'Email Copied!' : 'Copy Email'}</span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </main>
 
       {/* Footer */}

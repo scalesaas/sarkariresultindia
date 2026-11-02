@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import Script from 'next/script';
 import { 
   Upload, 
   CheckCircle2, 
@@ -66,19 +67,73 @@ export default function CreateReleasePanel({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-parse IPA/APK and autofill fields
+  // Auto-parse IPA/APK in the browser (<200ms, 0 network upload!) with server fallback
   const processAndParseFile = async (selected: File) => {
     setFile(selected);
     setUploadError(null);
     setParseSuccessMessage(null);
 
     const name = selected.name.toLowerCase();
-    const detectedPlatform = name.endsWith('.ipa') ? 'ios' : name.endsWith('.apk') ? 'android' : platform;
+    const detectedPlatform: Platform = name.endsWith('.ipa') ? 'ios' : name.endsWith('.apk') ? 'android' : platform;
     setPlatform(detectedPlatform);
 
-    // Call server parser to extract metadata & icon
     setIsParsing(true);
     try {
+      // 1. Fast client-side parsing in browser memory via AppInfoParser (0 bytes uploaded!)
+      const AppInfoParser = typeof window !== 'undefined' ? (window as any).AppInfoParser : null;
+      if (AppInfoParser) {
+        const parser = new AppInfoParser(selected);
+        const result = await parser.parse();
+        if (result) {
+          let extractedTitle = '';
+          let extractedVersion = '1.0.0';
+          let extractedBuild = '1';
+          let extractedBundleId = '';
+          let extractedMinOs = '';
+          let extractedIcon = result.icon || null;
+
+          if (detectedPlatform === 'ios') {
+            extractedTitle =
+              result.CFBundleDisplayName ||
+              result.CFBundleName ||
+              result.CFBundleExecutable ||
+              selected.name.replace(/\.ipa$/i, '');
+            extractedVersion = String(result.CFBundleShortVersionString || result.CFBundleVersion || '1.0.0');
+            extractedBuild = String(result.CFBundleVersion || '1');
+            extractedBundleId = String(result.CFBundleIdentifier || '');
+            extractedMinOs = result.MinimumOSVersion ? `iOS ${result.MinimumOSVersion}+` : 'iOS 14.0+';
+          } else {
+            const appLabel = result.application?.label;
+            extractedTitle = Array.isArray(appLabel)
+              ? appLabel[0]
+              : typeof appLabel === 'string'
+              ? appLabel
+              : selected.name.replace(/\.apk$/i, '');
+            extractedVersion = String(result.versionName || '1.0.0');
+            extractedBuild = String(result.versionCode || '1');
+            extractedBundleId = String(result.package || '');
+            const minSdk = result.usesSdk?.minSdkVersion;
+            extractedMinOs = minSdk ? `Android SDK ${minSdk}+` : 'Android 8.0+';
+          }
+
+          if (extractedTitle && (!title || title === defaultAppName)) {
+            setTitle(extractedTitle);
+          }
+          if (extractedVersion) setVersion(extractedVersion);
+          if (extractedBuild) setBuildNumber(extractedBuild);
+          if (extractedBundleId) setBundleId(extractedBundleId);
+          if (extractedMinOs) setMinOsVersion(extractedMinOs);
+          if (extractedIcon) setAppIcon(extractedIcon);
+
+          setParseSuccessMessage(
+            `⚡ Instant Autofill from ${selected.name}: v${extractedVersion} (Build ${extractedBuild}) • ${extractedBundleId}`
+          );
+          setIsParsing(false);
+          return;
+        }
+      }
+
+      // 2. Fallback to server parser only if browser parser script wasn't ready
       const formData = new FormData();
       formData.append('file', selected);
 
@@ -158,7 +213,7 @@ export default function CreateReleasePanel({
       let finalFileUrl = fileUrl;
       let finalS3Key = s3Key;
 
-      // 2. Direct S3 Upload with automatic server fallback
+      // 2. Direct 1-Hop Browser -> S3 Upload with Chunked Multipart Fallback (prevents 413 Payload Too Large)
       try {
         await new Promise<void>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
@@ -166,8 +221,8 @@ export default function CreateReleasePanel({
 
           xhr.upload.onprogress = (evt) => {
             if (evt.lengthComputable) {
-              const percent = Math.round((evt.loaded / evt.total) * 70); // 20% to 90%
-              setUploadProgress(20 + percent);
+              const percent = Math.round((evt.loaded / evt.total) * 75); // 15% to 90%
+              setUploadProgress(15 + percent);
             }
           };
 
@@ -187,41 +242,101 @@ export default function CreateReleasePanel({
           xhr.send(file);
         });
       } catch (directErr) {
-        console.warn('Direct S3 upload blocked, switching to server fallback stream...', directErr);
-        // Fallback: upload stream to /api/upload/direct
-        await new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', '/api/upload/direct', true);
-          xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-          xhr.setRequestHeader('x-file-name', file.name);
-          xhr.setRequestHeader('x-folder', `builds/${environment.toLowerCase()}`);
+        console.warn('Direct S3 upload blocked, switching to chunked multipart fallback...', directErr);
+        const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB minimum S3 multipart chunk size
+        const folderName = `builds/${environment.toLowerCase()}`;
 
-          xhr.upload.onprogress = (evt) => {
-            if (evt.lengthComputable) {
-              const percent = Math.round((evt.loaded / evt.total) * 70);
-              setUploadProgress(20 + percent);
+        if (file.size <= CHUNK_SIZE) {
+          // Small file (<= 5MB): single stream upload
+          const singleRes = await fetch('/api/upload/direct', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/octet-stream',
+              'x-file-name': encodeURIComponent(file.name),
+              'x-folder': folderName,
+            },
+            body: file,
+          });
+          if (!singleRes.ok) {
+            throw new Error(`Server upload failed with status ${singleRes.status}`);
+          }
+          const fbData = await singleRes.json();
+          finalFileUrl = fbData.fileUrl;
+          finalS3Key = fbData.s3Key;
+          setUploadProgress(95);
+        } else {
+          // Large file (> 5MB): S3 Multipart Chunked Upload so it never hits 413 Payload Too Large
+          const initRes = await fetch('/api/upload/direct', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-upload-action': 'init',
+            },
+            body: JSON.stringify({
+              fileName: file.name,
+              folder: folderName,
+            }),
+          });
+          if (!initRes.ok) {
+            throw new Error(`Failed to initialize chunked upload (Status ${initRes.status})`);
+          }
+          const { uploadId, s3Key: mpKey } = await initRes.json();
+          const totalParts = Math.ceil(file.size / CHUNK_SIZE);
+          const uploadedParts: { ETag: string; PartNumber: number }[] = [];
+
+          for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+            const start = (partNumber - 1) * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunkBlob = file.slice(start, end);
+
+            const partRes = await fetch('/api/upload/direct', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/octet-stream',
+                'x-upload-action': 'part',
+                'x-upload-id': uploadId,
+                'x-s3-key': mpKey,
+                'x-part-number': String(partNumber),
+              },
+              body: chunkBlob,
+            });
+
+            if (!partRes.ok) {
+              throw new Error(`Chunk ${partNumber}/${totalParts} failed with status ${partRes.status}`);
             }
-          };
 
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const fbData = JSON.parse(xhr.responseText);
-                finalFileUrl = fbData.fileUrl;
-                finalS3Key = fbData.s3Key;
-                setUploadProgress(95);
-                resolve();
-              } catch (e) {
-                reject(new Error('Invalid response from server upload'));
-              }
-            } else {
-              reject(new Error(`Server upload failed with status ${xhr.status}`));
-            }
-          };
+            const partData = await partRes.json();
+            uploadedParts.push({
+              ETag: partData.ETag,
+              PartNumber: partNumber,
+            });
 
-          xhr.onerror = () => reject(new Error('Network error during upload'));
-          xhr.send(file);
-        });
+            const percent = Math.round((partNumber / totalParts) * 75);
+            setUploadProgress(15 + percent);
+          }
+
+          const completeRes = await fetch('/api/upload/direct', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-upload-action': 'complete',
+            },
+            body: JSON.stringify({
+              uploadId,
+              s3Key: mpKey,
+              parts: uploadedParts,
+            }),
+          });
+
+          if (!completeRes.ok) {
+            throw new Error(`Failed to complete multipart upload (Status ${completeRes.status})`);
+          }
+
+          const completeData = await completeRes.json();
+          finalFileUrl = completeData.fileUrl;
+          finalS3Key = completeData.s3Key;
+          setUploadProgress(95);
+        }
       }
 
       // 3. Save release metadata in Supabase
@@ -297,15 +412,14 @@ export default function CreateReleasePanel({
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/90 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] w-full">
-      {/* AppsOnAir Style Header */}
+      <Script src="/app-info-parser.min.js" strategy="afterInteractive" />
+      {/* DropOnAir Style Header */}
       <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-            <Package className="w-5 h-5" />
-          </div>
+          <img src="/logo.png" alt="DropOnAir" className="w-9 h-9 object-contain" />
           <div>
             <h3 className="font-bold text-slate-900 text-base leading-tight">Create New Release</h3>
-            <p className="text-xs text-slate-500">Upload and configure APK or IPA build</p>
+            <p className="text-xs text-slate-500">Upload and configure APK or IPA build on DropOnAir</p>
           </div>
         </div>
 
@@ -333,15 +447,19 @@ export default function CreateReleasePanel({
           )}
           <span>
             {isPaidUser ? (
-              <strong>Paid Plan: Lifetime Storage Active</strong>
+              <strong>DropOnAir Pro: Lifetime Storage Active</strong>
             ) : (
               <strong>Free Tier: Builds remain active for 20 days</strong>
             )}
           </span>
         </div>
-        <span className="text-[11px] font-semibold opacity-90">
-          {isPaidUser ? 'Permanent' : '20 Days Retention'}
-        </span>
+        {isPaidUser ? (
+          <span className="text-[11px] font-semibold opacity-90">Permanent</span>
+        ) : (
+          <a href="/premium" className="text-[11px] font-bold text-[#0066FF] hover:underline">
+            Buy Lifetime Premium &rarr;
+          </a>
+        )}
       </div>
 
       {/* Body Area */}

@@ -5,8 +5,8 @@ import DashboardClient from './DashboardClient';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Dashboard - AppsOnAir APK & IPA Distribution',
-  description: 'Manage mobile testing builds, generate QR codes and OTA install links for DEV, UAT, and PROD.',
+  title: 'Dashboard - DropOnAir APK & IPA Distribution',
+  description: 'Manage mobile testing builds, generate QR codes and OTA install links for DEV, UAT, and PROD on DropOnAir.',
 };
 
 export const dynamic = 'force-dynamic';
